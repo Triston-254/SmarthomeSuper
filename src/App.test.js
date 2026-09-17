@@ -1,8 +1,14 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders learn react link', () => {
+test('offers login and signup before opening the dashboard', () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+
+  expect(screen.getByText(/smarthome supermarket/i)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /login/i })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /sign up/i })).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
+  expect(screen.getByLabelText(/full name/i)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument();
 });
