@@ -41,17 +41,25 @@ button {
 
 .app {
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   grid-template-columns: 1fr;
+  grid-template-rows: auto minmax(0, 1fr);
   color: var(--ink);
-  background: var(--page);
+  background:
+    radial-gradient(circle at top right, rgba(251, 146, 60, 0.16), transparent 28%),
+    linear-gradient(180deg, #fffaf5 0%, var(--page) 42%, #fff3ea 100%);
+  overflow-x: hidden;
 }
 
 .content-shell {
+  position: relative;
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
   min-width: 0;
+  min-height: 0;
   height: calc(100vh - 80px);
+  height: calc(100dvh - 80px);
   overflow: hidden;
 }
 
@@ -174,8 +182,13 @@ button {
   position: sticky;
   top: 0;
   align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
   min-height: calc(100vh - 80px);
+  min-height: calc(100dvh - 80px);
   max-height: calc(100vh - 80px);
+  max-height: calc(100dvh - 80px);
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.38) transparent;
@@ -321,9 +334,38 @@ button {
   min-width: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 12px;
-  text-align: center;
+  text-align: left;
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: clamp(1.05rem, 2.4vw, 1.45rem);
+  line-height: 1.2;
+}
+
+.topbar-subtitle {
+  margin: 4px 0 0;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.mobile-menu-button {
+  display: none;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 12px;
+  color: white;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  flex: 0 0 auto;
+}
+
+.sidebar-backdrop {
+  display: none;
 }
 
 .header-actions {
@@ -594,10 +636,16 @@ select:focus {
 .metric-card {
   min-height: 132px;
   padding: 18px;
-  border-radius: 14px;
+  border-radius: 16px;
   border: 1px solid var(--line);
   background: linear-gradient(180deg, #fffaf7 0%, #fff1e6 100%);
   box-shadow: 0 8px 18px rgba(249, 115, 22, 0.08);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 24px rgba(249, 115, 22, 0.12);
 }
 
 .metric-header {
@@ -1541,9 +1589,10 @@ select:focus {
 }
 
 .sidebar-footer {
-  margin-top: 22px;
+  margin-top: auto;
   display: grid;
   gap: 8px;
+  padding-top: 12px;
 }
 
 .auth-button,
@@ -1819,66 +1868,144 @@ select:focus {
   text-align: center;
 }
 
-@media (max-width: 1050px) {
-  .content-shell {
-    grid-template-columns: 260px minmax(0, 1fr);
-  }
-
-  .sidebar {
-    position: sticky;
-    min-height: calc(100vh - 80px);
-    max-height: calc(100vh - 80px);
-    width: 100%;
-    overflow-y: auto;
-  }
-
-  .app.drawer-closed .content-shell {
-    grid-template-columns: 76px minmax(0, 1fr);
-  }
-
-  .drawer-closed .sidebar {
-    display: block;
-  }
-
-  .sidebar nav {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .main-grid,
-  .dashboard-grid,
+@media (max-width: 1200px) {
   .metrics,
   .overview-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .main-grid,
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 900px) {
+  .content-shell {
+    grid-template-columns: minmax(0, 1fr);
+    height: calc(100vh - 72px);
+    height: calc(100dvh - 72px);
+  }
+
+  .app.drawer-closed .content-shell,
+  .app.drawer-open .content-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mobile-menu-button {
+    display: grid;
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 35;
+    border: 0;
+    background: rgba(43, 29, 19, 0.42);
+    backdrop-filter: blur(2px);
+  }
+
+  .sidebar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 40;
+    width: min(288px, 86vw);
+    min-height: 100%;
+    max-height: 100%;
+    transform: translateX(-105%);
+    transition: transform 0.24s ease;
+    box-shadow: 18px 0 40px rgba(43, 29, 19, 0.28);
+  }
+
+  .sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  .drawer-closed .sidebar,
+  .drawer-open .sidebar {
+    display: flex;
+    flex-direction: column;
+    padding-inline: 18px;
+  }
+
+  .drawer-closed .brand div,
+  .drawer-closed .sidebar b,
+  .drawer-closed .drawer-section-title b,
+  .drawer-closed .drawer-chevron,
+  .drawer-closed .logout-button {
+    display: initial;
+  }
+
+  .drawer-closed .logout-button {
+    display: inline-flex;
+  }
+
+  .drawer-toggle {
+    display: none;
+  }
+
   .workspace {
     padding: 14px;
-  }
-
-  .status-strip,
-  .checkout-row {
-    flex-direction: column;
-  }
-
-  .status-strip,
-  .checkout-row {
-    align-items: stretch;
+    gap: 12px;
   }
 
   .topbar {
-    grid-template-columns: 1fr 48px;
+    padding: 12px 14px;
+    gap: 12px;
   }
 
   .top-left {
-    grid-column: 1;
-    justify-content: start;
+    justify-content: flex-start;
     text-align: left;
   }
 
-  .profile-area {
-    grid-column: 2;
+  .status-strip {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .metrics,
+  .overview-grid,
+  .summary-grid,
+  .tool-grid,
+  .report-grid,
+  .sale-details,
+  .scan-form,
+  .stock-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .main-grid,
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .inventory-table article,
+  .cart-row {
+    grid-template-columns: 1fr;
+  }
+
+  .notification-panel,
+  .profile-menu {
+    width: min(320px, calc(100vw - 28px));
+    right: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .workspace {
+    padding: 12px;
+  }
+
+  .topbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 10px 12px;
+  }
+
+  .topbar-subtitle {
+    display: none;
   }
 
   .heading-actions {
@@ -1890,17 +2017,27 @@ select:focus {
     min-width: 0;
   }
 
+  .metrics,
+  .overview-grid,
+  .summary-grid,
   .sidebar nav,
   .main-grid,
   .dashboard-grid,
-  .metrics,
   .stock-form,
   .scan-form,
   .sale-details,
   .tool-grid,
-  .report-grid,
-  .overview-grid {
+  .report-grid {
     grid-template-columns: 1fr;
+  }
+
+  .metric-card {
+    min-height: 112px;
+    padding: 16px;
+  }
+
+  .metrics strong {
+    font-size: 1.4rem;
   }
 
   .alert-card {
@@ -1911,13 +2048,55 @@ select:focus {
     justify-self: start;
   }
 
-  .cart-row,
-  .inventory-table article {
-    grid-template-columns: 1fr;
-  }
-
   .cart-row b {
     text-align: left;
+  }
+
+  .status-strip,
+  .checkout-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .auth-shell {
+    padding: 18px 12px;
+    align-items: flex-start;
+  }
+
+  .auth-card {
+    width: 100%;
+    padding: 22px 16px 18px;
+    border-radius: 18px;
+  }
+
+  .auth-brand strong {
+    font-size: 1.25rem;
+  }
+
+  .panel {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 420px) {
+  .header-actions {
+    gap: 6px;
+  }
+
+  .notify-button,
+  .profile-button,
+  .mobile-menu-button {
+    width: 38px;
+    height: 38px;
+  }
+
+  .stock-key {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .workspace {
+    padding: 10px;
   }
 }
 
@@ -1927,12 +2106,14 @@ select:focus {
   }
 
   .sidebar,
+  .sidebar-backdrop,
   .topbar,
   .metrics,
   .status-strip,
   .main-grid,
   .dashboard-grid,
   .drawer-toggle,
+  .mobile-menu-button,
   .receipt-panel .panel-heading button {
     display: none;
   }

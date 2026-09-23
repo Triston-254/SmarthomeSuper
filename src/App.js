@@ -146,7 +146,12 @@ function App() {
   const toastTimerRef = useRef(null);
   const [receipt, setReceipt] = useState(null);
   const [activePage, setActivePage] = useState('dashboard');
-  const [drawerOpen, setDrawerOpen] = useState(true);
+  const [drawerOpen, setDrawerOpen] = useState(() => (
+    typeof window === 'undefined' ? true : window.innerWidth > 900
+  ));
+  const [isMobileLayout, setIsMobileLayout] = useState(() => (
+    typeof window === 'undefined' ? false : window.innerWidth <= 900
+  ));
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
@@ -215,6 +220,24 @@ function App() {
     setToast({ text, type });
     toastTimerRef.current = window.setTimeout(() => setToast(null), 2800);
   }
+
+  useEffect(() => {
+    let previousMobile = window.innerWidth <= 900;
+    setIsMobileLayout(previousMobile);
+    setDrawerOpen(!previousMobile);
+
+    function syncLayout() {
+      const mobile = window.innerWidth <= 900;
+      setIsMobileLayout(mobile);
+      if (mobile !== previousMobile) {
+        setDrawerOpen(!mobile);
+        previousMobile = mobile;
+      }
+    }
+
+    window.addEventListener('resize', syncLayout);
+    return () => window.removeEventListener('resize', syncLayout);
+  }, []);
 
   useEffect(() => {
     document.title = receipt ? `${storeName} Receipt ${receipt.ticket}` : `${storeName} Dashboard`;
@@ -644,7 +667,14 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      const data = await response.json().catch(() => ({}));
+      const contentType = response.headers.get('content-type') || '';
+      const data = contentType.includes('application/json')
+        ? await response.json().catch(() => ({}))
+        : {};
+
+      if (!contentType.includes('application/json')) {
+        throw new Error('Server API is unavailable. Check that the backend is deployed and database env vars are set.');
+      }
 
       if (!response.ok) {
         throw new Error(data.message || 'Authentication failed.');
@@ -682,6 +712,10 @@ function App() {
   function goToPage(pageId) {
     setActivePage(pageId);
     setProfileOpen(false);
+    setNotificationOpen(false);
+    if (window.innerWidth <= 900) {
+      setDrawerOpen(false);
+    }
   }
 
   if (!user) {
@@ -747,7 +781,7 @@ function App() {
   }
 
   return (
-    <main className={`app ${theme} ${drawerOpen ? 'drawer-open' : 'drawer-closed'} font-${font.toLowerCase()}`}>
+    <main className={`app ${theme} ${drawerOpen ? 'drawer-open' : 'drawer-closed'} ${isMobileLayout ? 'is-mobile' : 'is-desktop'} font-${font.toLowerCase()}`}>
       {toast && (
         <div className={`toast toast-${toast.type}`} role="status">
           <Icon name={toast.type === 'error' ? 'bell' : 'check'} size={18} />
@@ -765,8 +799,18 @@ function App() {
 
       <header className="topbar">
         <div className="top-left">
+          <button
+            type="button"
+            className="mobile-menu-button"
+            onClick={() => setDrawerOpen((open) => !open)}
+            aria-label={drawerOpen ? 'Close menu' : 'Open menu'}
+            title={drawerOpen ? 'Close menu' : 'Open menu'}
+          >
+            <Icon name={drawerOpen ? 'close' : 'menu'} />
+          </button>
           <div>
             <h1>{storeName}</h1>
+            <p className="topbar-subtitle">{storeLocation} · Live dashboard</p>
           </div>
         </div>
         <div className="header-actions">
@@ -825,7 +869,15 @@ function App() {
       </header>
 
       <div className="content-shell">
-        <aside className="sidebar">
+        {drawerOpen && isMobileLayout && (
+          <button
+            type="button"
+            className="sidebar-backdrop"
+            aria-label="Close navigation menu"
+            onClick={() => setDrawerOpen(false)}
+          />
+        )}
+        <aside className={`sidebar ${drawerOpen ? 'is-open' : 'is-collapsed'}`}>
           <button
             className="drawer-toggle"
             onClick={() => setDrawerOpen((open) => !open)}

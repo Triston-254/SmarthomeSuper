@@ -10,10 +10,25 @@ const { closePool, getPool, initializeDatabase } = require('./db');
 const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'smarthome-supermarket-secret';
+const IS_VERCEL = Boolean(process.env.VERCEL);
 
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
-app.use(express.static(path.join(__dirname, '..', 'build')));
+
+// On Vercel catch-all routes, the /api prefix can be stripped. Restore it so Express matches.
+app.use((req, res, next) => {
+  if (IS_VERCEL) {
+    const currentUrl = req.url || '/';
+    if (!currentUrl.startsWith('/api')) {
+      req.url = currentUrl === '/' ? '/api' : `/api${currentUrl}`;
+    }
+  }
+  return next();
+});
+
+if (!IS_VERCEL) {
+  app.use(express.static(path.join(__dirname, '..', 'build')));
+}
 
 function cleanString(value) {
   return typeof value === 'string' ? value.trim() : '';
@@ -438,7 +453,7 @@ app.get('/api/sales', authMiddleware, async (req, res, next) => {
 });
 
 app.use((req, res) => {
-  if (req.method === 'GET' && !req.path.startsWith('/api')) {
+  if (!IS_VERCEL && req.method === 'GET' && !req.path.startsWith('/api')) {
     return res.sendFile(path.join(__dirname, '..', 'build', 'index.html'));
   }
 
@@ -454,7 +469,7 @@ app.use((error, req, res, next) => {
     return res.status(error.status).json({ message: error.message });
   }
 
-  if (error.code === 'ER_DUP_ENTRY' || error.code === 11000) {
+  if (error.code === 'ER_DUP_ENTRY' || error.code === 11000 || error.code === '23505') {
     return res.status(409).json({ message: 'A record with those details already exists.' });
   }
 
@@ -482,7 +497,10 @@ async function handler(req, res) {
   } catch (error) {
     console.error('Database initialization failed:', error.message);
     if (!res.headersSent) {
-      return res.status(500).json({ message: 'Database is unavailable. Please try again.' });
+      const payload = JSON.stringify({ message: 'Database is unavailable. Please try again.' });
+      res.statusCode = 500;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(payload);
     }
   }
 }
