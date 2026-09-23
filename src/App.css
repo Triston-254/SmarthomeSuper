@@ -1222,11 +1222,9 @@ select:focus {
 }
 
 .toast {
-  position: fixed;
-  left: auto;
-  right: 22px;
-  top: 22px;
-  z-index: 100;
+  position: fixed !important;
+  inset: 18px 18px auto auto !important;
+  z-index: 1000;
   max-width: min(360px, calc(100vw - 44px));
   display: flex;
   align-items: center;
