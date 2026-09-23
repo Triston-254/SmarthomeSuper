@@ -14,10 +14,17 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "node backend/server.js",
     "build": "react-scripts build",
+    "build:frontend": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "install:all": "npm install && npm install --prefix backend",
+    "start:backend": "node backend/server.js",
+    "serve": "npm run build:frontend && node backend/server.js",
+    "start:frontend": "react-scripts start",
+    "dev:frontend": "react-scripts start",
+    "dev:backend": "npm --prefix backend run dev"
   },
   "eslintConfig": {
     "extends": [

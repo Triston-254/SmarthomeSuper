@@ -4,7 +4,7 @@ import './App.css';
 
 const storeName = 'Smarthome Supermarket';
 const storeLocation = 'Kisii';
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000/api';
+const API_BASE = process.env.REACT_APP_API_BASE || '/api';
 const defaultCategories = ['Beverages', 'Food', 'Household', 'Personal Care', 'Electronics', 'Stationary', 'Clothing'];
 
 const startingProducts = [

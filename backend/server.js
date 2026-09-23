@@ -1,3 +1,5 @@
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
@@ -11,6 +13,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'smarthome-supermarket-secret';
 
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
+app.use(express.static(path.join(__dirname, '..', 'build')));
 
 function cleanString(value) {
   return typeof value === 'string' ? value.trim() : '';
@@ -82,13 +85,10 @@ function serializeProduct(row) {
 }
 
 async function getProduct(productId) {
-  const [rows] = await getPool().execute(
-    `SELECT id, name, sku, category, price, stock, capacity
-     FROM products
-     WHERE id = ?`,
+  const { rows } = await getPool().query(
+    'SELECT id, name, sku, category, price, stock, capacity FROM products WHERE id = $1',
     [productId]
   );
-
   return rows[0] ? serializeProduct(rows[0]) : null;
 }
 
@@ -120,7 +120,7 @@ function serializeSale(row, items = []) {
 
 app.get('/api/health', async (req, res, next) => {
   try {
-    await getPool().execute('SELECT 1 AS ok');
+    await getPool().query('SELECT 1 AS ok');
     res.json({ status: 'ok', service: 'supermarket-backend' });
   } catch (error) {
     next(error);
@@ -146,29 +146,17 @@ app.post('/api/signup', async (req, res, next) => {
       return res.status(400).json({ message: 'Password must contain at least 6 characters.' });
     }
 
-    const [existingRows] = await getPool().execute(
-      'SELECT id FROM users WHERE email = ?',
-      [email]
-    );
-
-    if (existingRows.length > 0) {
+    const existing = await getPool().query('SELECT id FROM users WHERE email = $1', [email]);
+    if (existing.rowCount > 0) {
       return res.status(409).json({ message: 'User already exists.' });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const [result] = await getPool().execute(
-      `INSERT INTO users (name, email, password_hash, role)
-       VALUES (?, ?, ?, 'staff')`,
+    const { rows } = await getPool().query(
+      'INSERT INTO users (name, email, password_hash, role) VALUES ($1, $2, $3, \'staff\') RETURNING id, name, email, role',
       [name, email, passwordHash]
     );
-
-    const [userRows] = await getPool().execute(
-      `SELECT id, name, email, role
-       FROM users
-       WHERE id = ?`,
-      [result.insertId]
-    );
-    const user = serializeUser(userRows[0]);
+    const user = rows[0];
 
     return res.status(201).json({ token: createToken(user), user });
   } catch (error) {
@@ -186,13 +174,8 @@ app.post('/api/login', async (req, res, next) => {
       return res.status(400).json({ message: 'Email and password are required.' });
     }
 
-    const [userRows] = await getPool().execute(
-      `SELECT id, name, email, password_hash, role
-       FROM users
-       WHERE email = ?`,
-      [email]
-    );
-    const userRow = userRows[0];
+    const { rows } = await getPool().query('SELECT id, name, email, password_hash, role FROM users WHERE email = $1', [email]);
+    const userRow = rows[0];
 
     if (!userRow || !(await bcrypt.compare(password, userRow.password_hash))) {
       return res.status(401).json({ message: 'Invalid credentials.' });
@@ -207,18 +190,14 @@ app.post('/api/login', async (req, res, next) => {
 
 app.get('/api/me', authMiddleware, async (req, res, next) => {
   try {
-    const [userRows] = await getPool().execute(
-      `SELECT id, name, email, role
-       FROM users
-       WHERE id = ?`,
-      [req.user.id]
-    );
+    const { rows } = await getPool().query('SELECT id, name, email, role FROM users WHERE id = $1', [req.user.id]);
+    const userRow = rows[0];
 
-    if (userRows.length === 0) {
+    if (!userRow) {
       return res.status(401).json({ message: 'Invalid or expired session.' });
     }
 
-    return res.json({ user: serializeUser(userRows[0]) });
+    return res.json({ user: serializeUser(userRow) });
   } catch (error) {
     return next(error);
   }
@@ -226,12 +205,7 @@ app.get('/api/me', authMiddleware, async (req, res, next) => {
 
 app.get('/api/products', authMiddleware, async (req, res, next) => {
   try {
-    const [rows] = await getPool().execute(
-      `SELECT id, name, sku, category, price, stock, capacity
-       FROM products
-       ORDER BY id ASC`
-    );
-
+    const { rows } = await getPool().query('SELECT id, name, sku, category, price, stock, capacity FROM products ORDER BY id ASC');
     return res.json(rows.map(serializeProduct));
   } catch (error) {
     return next(error);
@@ -253,12 +227,11 @@ app.post('/api/products', authMiddleware, async (req, res, next) => {
       return res.status(400).json({ message: 'Name, category, price, stock and capacity are required.' });
     }
 
-    const [result] = await getPool().execute(
-      `INSERT INTO products (name, sku, category, price, stock, capacity)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+    const { rows } = await getPool().query(
+      'INSERT INTO products (name, sku, category, price, stock, capacity) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
       [name, sku, category, price, stock, capacity]
     );
-    const product = await getProduct(result.insertId);
+    const product = await getProduct(rows[0].id);
 
     return res.status(201).json(product);
   } catch (error) {
@@ -293,8 +266,8 @@ app.put('/api/products/:id', authMiddleware, async (req, res, next) => {
         if (!value) {
           return res.status(400).json({ message: 'Product fields cannot be empty.' });
         }
-        updates.push(`${field} = ?`);
         values.push(value);
+        updates.push(`${field} = $${values.length}`);
         continue;
       }
 
@@ -311,8 +284,8 @@ app.put('/api/products/:id', authMiddleware, async (req, res, next) => {
         return res.status(400).json({ message: 'Stock and capacity must be whole numbers.' });
       }
 
-      updates.push(`${field} = ?`);
       values.push(value);
+      updates.push(`${field} = $${values.length}`);
     }
 
     if (updates.length === 0) {
@@ -320,10 +293,7 @@ app.put('/api/products/:id', authMiddleware, async (req, res, next) => {
     }
 
     values.push(productId);
-    await getPool().execute(
-      `UPDATE products SET ${updates.join(', ')} WHERE id = ?`,
-      values
-    );
+    await getPool().query(`UPDATE products SET ${updates.join(', ')}, updated_at = NOW() WHERE id = $${values.length}`, values);
 
     return res.json(await getProduct(productId));
   } catch (error) {
@@ -332,8 +302,7 @@ app.put('/api/products/:id', authMiddleware, async (req, res, next) => {
 });
 
 app.post('/api/sales', authMiddleware, async (req, res, next) => {
-  const connection = await getPool().getConnection();
-  let sale;
+  const connection = await getPool().connect();
 
   try {
     const payload = req.body && typeof req.body === 'object' ? req.body : {};
@@ -364,79 +333,85 @@ app.post('/api/sales', authMiddleware, async (req, res, next) => {
     const soldAt = new Date();
     const ticket = makeTicketNumber();
 
-    await connection.beginTransaction();
-
+    await connection.query('BEGIN');
     for (const item of items) {
-      const [productRows] = await connection.execute(
-        `SELECT id, stock
-         FROM products
-         WHERE id = ?
-         FOR UPDATE`,
-        [item.id]
-      );
-      const product = productRows[0];
-
+      const productResult = await connection.query('SELECT id, stock FROM products WHERE id = $1 FOR UPDATE', [item.id]);
+      const product = productResult.rows[0];
       if (!product) {
         const error = new Error('One or more products were not found.');
         error.status = 404;
         throw error;
       }
-
       if (Number(product.stock) < item.quantity) {
         const error = new Error(`Only ${product.stock} units are available for one or more products.`);
         error.status = 409;
         throw error;
       }
-
-      await connection.execute(
-        'UPDATE products SET stock = stock - ? WHERE id = ?',
-        [item.quantity, item.id]
-      );
+      await connection.query('UPDATE products SET stock = stock - $1, updated_at = NOW() WHERE id = $2', [item.quantity, item.id]);
     }
 
-    const [saleResult] = await connection.execute(
-      `INSERT INTO sales (ticket, buyer, server_name, total, user_id, sold_at)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+    const saleResult = await connection.query(
+      'INSERT INTO sales (ticket, buyer, server_name, total, user_id, sold_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, ticket, buyer, server_name, total, user_id, sold_at',
       [ticket, buyer, server, total, req.user.id, soldAt]
     );
-
+    const saleRow = saleResult.rows[0];
     for (const item of items) {
-      await connection.execute(
-        `INSERT INTO sale_items
-          (sale_id, product_id, product_name, sku, unit_price, quantity, subtotal)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [
-          saleResult.insertId,
-          item.id,
-          item.name,
-          item.sku,
-          item.price,
-          item.quantity,
-          Number((item.price * item.quantity).toFixed(2)),
-        ]
+      await connection.query(
+        'INSERT INTO sale_items (sale_id, product_id, product_name, sku, unit_price, quantity, subtotal) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+        [saleRow.id, item.id, item.name, item.sku, item.price, item.quantity, Number((item.price * item.quantity).toFixed(2))]
       );
     }
+    await connection.query('COMMIT');
+    const itemResult = await connection.query('SELECT product_id, product_name, sku, unit_price, quantity, subtotal FROM sale_items WHERE sale_id = $1 ORDER BY id ASC', [saleRow.id]);
+    const sale = serializeSale(saleRow, itemResult.rows);
 
-    await connection.commit();
+    /*
+      for (const item of items) {
+        const product = await products.findOne({ id: item.id }, { session });
+        if (!product) {
+          const error = new Error('One or more products were not found.');
+          error.status = 404;
+          throw error;
+        }
 
-    const [saleRows] = await connection.execute(
-      `SELECT id, ticket, buyer, server_name, total, user_id, sold_at
-       FROM sales
-       WHERE id = ?`,
-      [saleResult.insertId]
-    );
-    const [itemRows] = await connection.execute(
-      `SELECT product_id, product_name, sku, unit_price, quantity, subtotal
-       FROM sale_items
-       WHERE sale_id = ?
-       ORDER BY id ASC`,
-      [saleResult.insertId]
-    );
-    sale = serializeSale(saleRows[0], itemRows);
+        if (Number(product.stock) < item.quantity) {
+          const error = new Error(`Only ${product.stock} units are available for one or more products.`);
+          error.status = 409;
+          throw error;
+        }
+
+        await products.updateOne(
+          { id: item.id, stock: { $gte: item.quantity } },
+          { $inc: { stock: -item.quantity }, $set: { updated_at: new Date() } },
+          { session }
+        );
+      }
+
+      const saleDocument = {
+        id: await nextId('sales'),
+        ticket,
+        buyer,
+        server_name: server,
+        total,
+        user_id: req.user.id,
+        sold_at: soldAt,
+        created_at: new Date(),
+        items: items.map((item) => ({
+          product_id: item.id,
+          product_name: item.name,
+          sku: item.sku,
+          unit_price: item.price,
+          quantity: item.quantity,
+          subtotal: Number((item.price * item.quantity).toFixed(2)),
+        })),
+      };
+      await sales.insertOne(saleDocument, { session });
+      sale = serializeSale(saleDocument, saleDocument.items);
+    }, { readConcern: { level: 'snapshot' }, writeConcern: { w: 'majority' } }); */
 
     return res.status(201).json(sale);
   } catch (error) {
-    await connection.rollback();
+    await connection.query('ROLLBACK');
     return next(error);
   } finally {
     connection.release();
@@ -445,19 +420,12 @@ app.post('/api/sales', authMiddleware, async (req, res, next) => {
 
 app.get('/api/sales', authMiddleware, async (req, res, next) => {
   try {
-    const [saleRows] = await getPool().execute(
-      `SELECT id, ticket, buyer, server_name, total, user_id, sold_at
-       FROM sales
-       ORDER BY sold_at DESC
-       LIMIT 100`
+    const { rows: saleRows } = await getPool().query(
+      'SELECT id, ticket, buyer, server_name, total, user_id, sold_at FROM sales ORDER BY sold_at DESC LIMIT 100'
     );
-
     const sales = await Promise.all(saleRows.map(async (saleRow) => {
-      const [itemRows] = await getPool().execute(
-        `SELECT product_id, product_name, sku, unit_price, quantity, subtotal
-         FROM sale_items
-         WHERE sale_id = ?
-         ORDER BY id ASC`,
+      const { rows: itemRows } = await getPool().query(
+        'SELECT product_id, product_name, sku, unit_price, quantity, subtotal FROM sale_items WHERE sale_id = $1 ORDER BY id ASC',
         [saleRow.id]
       );
       return serializeSale(saleRow, itemRows);
@@ -470,6 +438,10 @@ app.get('/api/sales', authMiddleware, async (req, res, next) => {
 });
 
 app.use((req, res) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api')) {
+    return res.sendFile(path.join(__dirname, '..', 'build', 'index.html'));
+  }
+
   res.status(404).json({ message: 'Endpoint not found.' });
 });
 
@@ -482,7 +454,7 @@ app.use((error, req, res, next) => {
     return res.status(error.status).json({ message: error.message });
   }
 
-  if (error.code === 'ER_DUP_ENTRY') {
+  if (error.code === 'ER_DUP_ENTRY' || error.code === 11000) {
     return res.status(409).json({ message: 'A record with those details already exists.' });
   }
 
@@ -490,8 +462,33 @@ app.use((error, req, res, next) => {
   return res.status(500).json({ message: 'Something went wrong. Please try again.' });
 });
 
+let databaseReady;
+
+async function ensureDatabase() {
+  if (!databaseReady) {
+    databaseReady = initializeDatabase().catch((error) => {
+      databaseReady = undefined;
+      throw error;
+    });
+  }
+
+  return databaseReady;
+}
+
+async function handler(req, res) {
+  try {
+    await ensureDatabase();
+    return app(req, res);
+  } catch (error) {
+    console.error('Database initialization failed:', error.message);
+    if (!res.headersSent) {
+      return res.status(500).json({ message: 'Database is unavailable. Please try again.' });
+    }
+  }
+}
+
 async function start() {
-  await initializeDatabase();
+  await ensureDatabase();
   app.listen(PORT, () => {
     console.log(`SmartHome supermarket backend running on port ${PORT}`);
   });
@@ -502,11 +499,15 @@ async function shutdown() {
   process.exit(0);
 }
 
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
+if (require.main === module) {
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
 
-start().catch(async (error) => {
-  console.error('Unable to start the backend:', error.message);
-  await closePool();
-  process.exit(1);
-});
+  start().catch(async (error) => {
+    console.error('Unable to start the backend:', error.message);
+    await closePool();
+    process.exit(1);
+  });
+}
+
+module.exports = handler;
