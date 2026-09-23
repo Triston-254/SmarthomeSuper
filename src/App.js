@@ -1845,7 +1845,13 @@ function Cart({ cart, cartTotal, onQuantity, onCheckout }) {
 
 function ProductList({ products, onSell, onRestock, onUpdateStock, detailed = false }) {
   if (!products.length) {
-    return <p className="empty">No goods in this view.</p>;
+    return (
+      <div className="all-clear stock-empty-state">
+        <span className="all-clear-icon"><Icon name="boxes" size={32} /></span>
+        <strong>No stock available</strong>
+        <small>There are no products in this category yet.</small>
+      </div>
+    );
   }
 
   return (
