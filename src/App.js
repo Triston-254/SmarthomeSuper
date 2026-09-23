@@ -292,6 +292,10 @@ function App() {
 
     let cancelled = false;
 
+    setIsLoading(true);
+    setProducts([]);
+    setSalesHistory([]);
+
     async function loadSessionData() {
       try {
         const authResponse = await fetch(`${API_BASE}/me`, {
