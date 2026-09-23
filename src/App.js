@@ -833,12 +833,13 @@ function App() {
   function handleLogout() {
     window.localStorage.removeItem('smarthome-token');
     window.localStorage.removeItem('smarthome-user');
+    window.localStorage.removeItem('smarthome-active-page');
     setAuthToken('');
     setUser(null);
     setAuthMode('login');
     setResetMode(false);
     setAuthForm({ name: '', email: '', password: '' });
-    setAuthNotice('You have been logged out.');
+    setAuthNotice('');
     setProfileOpen(false);
     setNotificationOpen(false);
     setProducts(startingProducts);
@@ -846,7 +847,7 @@ function App() {
     setReceipt(null);
     setActivePage('dashboard');
     setMessage('Ready for the next customer.');
-    showToast('You have been logged out.', 'success');
+    showToast('Logged out successfully', 'success');
   }
 
   function goToPage(pageId) {

@@ -727,7 +727,7 @@ select:focus {
   justify-content: space-between;
   gap: 12px;
   align-items: center;
-  min-height: 42px;
+  height: 42px;
   padding: 7px 12px;
   border-radius: 8px;
   font-size: 0.78rem;
@@ -744,7 +744,7 @@ select:focus {
 .status-welcome {
   color: var(--green);
   font-weight: 700;
-  font-size: 0.82rem;
+  font-size: 1rem;
   white-space: nowrap;
 }
 
