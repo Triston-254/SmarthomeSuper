@@ -211,8 +211,8 @@ button {
   border-radius: 999px;
 }
 
-.drawer-closed .sidebar {
-  padding-inline: 14px;
+.app.drawer-closed .sidebar {
+  padding: 24px 18px 18px;
 }
 
 .brand {
