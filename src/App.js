@@ -55,6 +55,9 @@ const iconPaths = {
   check: ['M5 12l4 4L19 6'],
   'chevron-down': ['M6 9l6 6 6-6'],
   'chevron-up': ['M6 15l6-6 6 6'],
+  eye: ['M2 12s3-7 10-7 10 7-3 7-10 7-10-7z', 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z'],
+  'eye-off': ['M9.9 4.2A9.9 9.9 0 0 1 12 4c7 0 10 8 10 8a18 18 0 0 1-2.6 3.6', 'M6.6 6.6A18 18 0 0 0 2 12s3 7 10 7a9.9 9.9 0 0 0 5.4-1.6', 'M3 3l18 18'],
+  mail: ['M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z', 'M22 6 12 13 2 6'],
 };
 
 function Icon({ name, size = 20 }) {
@@ -127,6 +130,14 @@ function App() {
   const [authError, setAuthError] = useState('');
   const [authNotice, setAuthNotice] = useState('');
   const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [resetMode, setResetMode] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetToken, setResetToken] = useState('');
+  const [resetForm, setResetForm] = useState({ password: '', confirm: '' });
+  const [resetError, setResetError] = useState('');
+  const [resetNotice, setResetNotice] = useState('');
+  const [isResetLoading, setIsResetLoading] = useState(false);
   const [user, setUser] = useState(() => {
     try {
       const savedToken = window.localStorage.getItem('smarthome-token');
@@ -709,6 +720,80 @@ function App() {
     }
   }
 
+  async function handleRequestReset(event) {
+    if (event) {
+      event.preventDefault();
+    }
+    setResetError('');
+    setResetNotice('');
+    setIsResetLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail.trim() }),
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Unable to send reset link.');
+      }
+
+      if (data.token) {
+        setResetToken(data.token);
+        setResetNotice('Reset link generated. Paste it below to continue.');
+      } else {
+        setResetNotice('If an account exists, a reset link has been sent.');
+      }
+    } catch (error) {
+      setResetError(error.message || 'Unable to send reset link.');
+    } finally {
+      setIsResetLoading(false);
+    }
+  }
+
+  async function handleResetSubmit(event) {
+    event.preventDefault();
+    setResetError('');
+    setResetNotice('');
+
+    if (resetForm.password !== resetForm.confirm) {
+      setResetError('New passwords do not match.');
+      return;
+    }
+
+    if (resetForm.password.length < 6) {
+      setResetError('Password must contain at least 6 characters.');
+      return;
+    }
+
+    setIsResetLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE}/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: resetToken, password: resetForm.password }),
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Unable to reset password.');
+      }
+
+      setResetNotice(data.message || 'Password has been reset.');
+      setResetToken('');
+      setResetForm({ password: '', confirm: '' });
+      setResetEmail('');
+      setTimeout(() => setResetMode(false), 1500);
+    } catch (error) {
+      setResetError(error.message || 'Unable to reset password.');
+    } finally {
+      setIsResetLoading(false);
+    }
+  }
+
   function handleLogout() {
     window.localStorage.removeItem('smarthome-token');
     window.localStorage.removeItem('smarthome-user');
@@ -744,51 +829,131 @@ function App() {
             </div>
           </div>
 
-          <div className="auth-tabs">
-            <button className={authMode === 'login' ? 'active' : ''} onClick={() => switchAuthMode('login')}>Login</button>
-            <button className={authMode === 'signup' ? 'active' : ''} onClick={() => switchAuthMode('signup')}>Sign up</button>
-          </div>
+          {!resetMode ? (
+            <>
+              <div className="auth-tabs">
+                <button className={authMode === 'login' ? 'active' : ''} onClick={() => switchAuthMode('login')}>Login</button>
+                <button className={authMode === 'signup' ? 'active' : ''} onClick={() => switchAuthMode('signup')}>Sign up</button>
+              </div>
 
-          <form className="auth-form" onSubmit={handleAuthSubmit}>
-            {authMode === 'signup' && (
+              <form className="auth-form" onSubmit={handleAuthSubmit}>
+                {authMode === 'signup' && (
+                  <label>
+                    <span>Full name</span>
+                    <input
+                      type="text"
+                      value={authForm.name}
+                      onChange={(event) => setAuthForm({ ...authForm, name: event.target.value })}
+                      placeholder="Store manager"
+                    />
+                  </label>
+                )}
+
+                <label>
+                  <span>Email</span>
+                  <input
+                    type="email"
+                    value={authForm.email}
+                    onChange={(event) => setAuthForm({ ...authForm, email: event.target.value })}
+                    placeholder="manager@smarthome.com"
+                  />
+                </label>
+
+                <label className="password-field">
+                  <span>Password</span>
+                  <div className="password-input-wrap">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={authForm.password}
+                      onChange={(event) => setAuthForm({ ...authForm, password: event.target.value })}
+                      placeholder="Enter password"
+                      autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle"
+                      onClick={() => setShowPassword((show) => !show)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      <Icon name={showPassword ? 'eye-off' : 'eye'} size={18} />
+                    </button>
+                  </div>
+                </label>
+
+                <button type="submit" className={`auth-submit ${isAuthLoading ? 'loading' : ''}`} disabled={isAuthLoading}>
+                  {isAuthLoading ? (authMode === 'login' ? 'Signing in...' : 'Creating account...') : (authMode === 'login' ? 'Login to dashboard' : 'Create account')}
+                </button>
+              </form>
+
+              {authNotice && <p className="auth-notice" role="status">{authNotice}</p>}
+              {authError && <p className="auth-error" role="alert">{authError}</p>}
+
+              {authMode === 'login' && (
+                <p className="auth-footer-link">
+                  <button type="button" onClick={() => { setResetMode(true); setResetError(''); setResetNotice(''); }} className="link-button">
+                    Forgot your password?
+                  </button>
+                </p>
+              )}
+            </>
+          ) : resetToken ? (
+            <form className="auth-form" onSubmit={handleResetSubmit}>
+              <p className="auth-notice">Enter a new password for your account.</p>
               <label>
-                <span>Full name</span>
+                <span>New password</span>
                 <input
-                  type="text"
-                  value={authForm.name}
-                  onChange={(event) => setAuthForm({ ...authForm, name: event.target.value })}
-                  placeholder="Store manager"
+                  type="password"
+                  value={resetForm.password}
+                  onChange={(event) => setResetForm({ ...resetForm, password: event.target.value })}
+                  placeholder="At least 6 characters"
+                  autoFocus
                 />
               </label>
-            )}
-
-            <label>
-              <span>Email</span>
-              <input
-                type="email"
-                value={authForm.email}
-                onChange={(event) => setAuthForm({ ...authForm, email: event.target.value })}
-                placeholder="manager@smarthome.com"
-              />
-            </label>
-
-            <label>
-              <span>Password</span>
-              <input
-                type="password"
-                value={authForm.password}
-                onChange={(event) => setAuthForm({ ...authForm, password: event.target.value })}
-                placeholder="Enter password"
-              />
-            </label>
-
-            <button type="submit" className={`auth-submit ${isAuthLoading ? 'loading' : ''}`} disabled={isAuthLoading}>
-              {isAuthLoading ? (authMode === 'login' ? 'Signing in...' : 'Creating account...') : (authMode === 'login' ? 'Login to dashboard' : 'Create account')}
-            </button>
-          </form>
-
-          {authNotice && <p className="auth-notice" role="status">{authNotice}</p>}
-          {authError && <p className="auth-error" role="alert">{authError}</p>}
+              <label>
+                <span>Confirm new password</span>
+                <input
+                  type="password"
+                  value={resetForm.confirm}
+                  onChange={(event) => setResetForm({ ...resetForm, confirm: event.target.value })}
+                  placeholder="Repeat new password"
+                />
+              </label>
+              <button type="submit" className={`auth-submit ${isResetLoading ? 'loading' : ''}`} disabled={isResetLoading}>
+                {isResetLoading ? 'Resetting password...' : 'Reset password'}
+              </button>
+              {resetError && <p className="auth-error" role="alert">{resetError}</p>}
+              {resetNotice && <p className="auth-notice" role="status">{resetNotice}</p>}
+              <p className="auth-footer-link">
+                <button type="button" onClick={() => { setResetMode(false); setResetToken(''); setResetForm({ password: '', confirm: '' }); }} className="link-button">
+                  Back to login
+                </button>
+              </p>
+            </form>
+          ) : (
+            <form className="auth-form" onSubmit={handleRequestReset}>
+              <p className="auth-notice">Enter your email to receive a password reset link.</p>
+              <label>
+                <span>Email address</span>
+                <input
+                  type="email"
+                  value={resetEmail}
+                  onChange={(event) => setResetEmail(event.target.value)}
+                  placeholder="manager@smarthome.com"
+                  autoFocus
+                />
+              </label>
+              <button type="submit" className={`auth-submit ${isResetLoading ? 'loading' : ''}`} disabled={isResetLoading}>
+                {isResetLoading ? 'Sending link...' : 'Send reset link'}
+              </button>
+              {resetError && <p className="auth-error" role="alert">{resetError}</p>}
+              {resetNotice && <p className="auth-notice" role="status">{resetNotice}</p>}
+              <p className="auth-footer-link">
+                <button type="button" onClick={() => { setResetMode(false); setResetEmail(''); }} className="link-button">
+                  Back to login
+                </button>
+              </p>
+            </form>
+          )}
 
         </div>
       </main>

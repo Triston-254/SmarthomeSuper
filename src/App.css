@@ -1917,6 +1917,75 @@ select:focus {
   text-align: center;
 }
 
+.auth-notice {
+  margin-top: 16px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(20, 122, 69, 0.08);
+  border: 1px solid rgba(20, 122, 69, 0.2);
+  color: var(--green-dark);
+  font-weight: 700;
+  text-align: center;
+}
+
+.auth-footer-link {
+  margin-top: 14px;
+  text-align: center;
+}
+
+.auth-footer-link .link-button {
+  background: none;
+  border: none;
+  color: var(--green);
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.auth-footer-link .link-button:hover {
+  color: var(--green-dark);
+}
+
+.password-field {
+  position: relative;
+}
+
+.password-input-wrap {
+  position: relative;
+}
+
+.password-input-wrap input {
+  padding-right: 44px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.15s ease;
+}
+
+.password-toggle:hover {
+  background: rgba(20, 122, 69, 0.1);
+  color: var(--green);
+}
+
+.password-toggle:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
 @media (max-width: 1200px) {
   .metrics,
   .overview-grid {

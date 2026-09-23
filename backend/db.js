@@ -69,6 +69,8 @@ async function initializeDatabase() {
   `;
 
   await pool.query(schema);
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_hash VARCHAR(255)');
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expires_at TIMESTAMPTZ');
   await pool.query('SELECT 1');
   return pool;
 }

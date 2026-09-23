@@ -218,6 +218,74 @@ app.get('/api/me', authMiddleware, async (req, res, next) => {
   }
 });
 
+app.post('/api/auth/forgot-password', async (req, res, next) => {
+  try {
+    const payload = req.body && typeof req.body === 'object' ? req.body : {};
+    const email = normalizeEmail(payload.email);
+
+    if (!email) {
+      return res.status(400).json({ message: 'Email address is required.' });
+    }
+
+    const { rows } = await getPool().query('SELECT id, email FROM users WHERE email = $1', [email]);
+    if (rows.length === 0) {
+      return res.json({ message: 'If an account exists, a reset link has been sent.' });
+    }
+
+    const userRow = rows[0];
+    const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    await getPool().query(
+      'UPDATE users SET reset_token_hash = $1, reset_token_expires_at = $2, updated_at = NOW() WHERE id = $3',
+      [tokenHash, expiresAt, userRow.id]
+    );
+
+    return res.json({ message: 'If an account exists, a reset link has been sent.', token });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.post('/api/auth/reset-password', async (req, res, next) => {
+  try {
+    const payload = req.body && typeof req.body === 'object' ? req.body : {};
+    const token = typeof payload.token === 'string' ? payload.token.trim() : '';
+    const password = typeof payload.password === 'string' ? payload.password : '';
+
+    if (!token || !password) {
+      return res.status(400).json({ message: 'Reset token and new password are required.' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must contain at least 6 characters.' });
+    }
+
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const { rows } = await getPool().query(
+      'SELECT id, email FROM users WHERE reset_token_hash = $1 AND reset_token_expires_at > NOW()',
+      [tokenHash]
+    );
+
+    if (rows.length === 0) {
+      return res.status(400).json({ message: 'Reset token is invalid or has expired.' });
+    }
+
+    const userRow = rows[0];
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    await getPool().query(
+      'UPDATE users SET password_hash = $1, reset_token_hash = NULL, reset_token_expires_at = NULL, updated_at = NOW() WHERE id = $2',
+      [passwordHash, userRow.id]
+    );
+
+    return res.json({ message: 'Password has been reset. You can now sign in.' });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 app.get('/api/products', authMiddleware, async (req, res, next) => {
   try {
     const { rows } = await getPool().query('SELECT id, name, sku, category, price, stock, capacity FROM products ORDER BY id ASC');
