@@ -820,6 +820,10 @@ function App() {
     window.localStorage.removeItem('smarthome-user');
     setAuthToken('');
     setUser(null);
+    setAuthMode('login');
+    setResetMode(false);
+    setAuthForm({ name: '', email: '', password: '' });
+    setAuthNotice('You have been logged out.');
     setProfileOpen(false);
     setNotificationOpen(false);
     setProducts(startingProducts);
@@ -841,7 +845,15 @@ function App() {
 
   if (!user) {
     return (
-      <main className="app auth-shell">
+      <div className="app-root">
+        {toast && (
+          <div className={`toast toast-${toast.type}`} role="status">
+            <Icon name={toast.type === 'error' ? 'bell' : 'check'} size={18} />
+            <span>{toast.text}</span>
+            <span className="toast-progress" />
+          </div>
+        )}
+        <main className="app auth-shell">
         <div className="auth-card">
           <div className="auth-brand">
             <span className="brand-icon"><Icon name="cart" /></span>
@@ -978,7 +990,8 @@ function App() {
           )}
 
         </div>
-      </main>
+        </main>
+      </div>
     );
   }
 
@@ -1157,10 +1170,6 @@ function App() {
             <h1>{storeName}</h1>
           </div>
         </div>
-        <div className="topbar-user" aria-label={`Signed in as ${user?.name || 'user'}`}>
-          <span>Welcome</span>
-          <strong>{user?.name || 'User'}</strong>
-        </div>
         <div className="header-actions">
           <div className="notification-wrap">
             <button
@@ -1292,10 +1301,13 @@ function App() {
 
         <section className="workspace">
           <section className="status-strip">
-            <div className="stock-key">
-              <span><i className="low-dot"></i> Low</span>
-              <span><i className="average-dot"></i> Average</span>
-              <span><i className="high-dot"></i> High</span>
+            <div className="status-left">
+              <div className="stock-key">
+                <span><i className="low-dot"></i> Low</span>
+                <span><i className="average-dot"></i> Average</span>
+                <span><i className="high-dot"></i> High</span>
+              </div>
+              <span className="status-welcome">Welcome, {user?.name || 'User'}</span>
             </div>
             <strong>{message}</strong>
           </section>
