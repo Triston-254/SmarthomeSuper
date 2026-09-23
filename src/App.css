@@ -1517,6 +1517,148 @@ select:focus {
   margin-bottom: 8px;
 }
 
+.report-generator {
+  display: grid;
+  gap: 16px;
+  max-width: 560px;
+}
+
+.report-options label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.generate-report-btn {
+  padding: 12px 20px;
+  border-radius: 8px;
+  background: var(--green);
+  color: white;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.generate-report-btn:hover:not(:disabled) {
+  background: #15803d;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(194, 65, 12, 0.2);
+}
+
+.generate-report-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.report-viewer {
+  display: grid;
+  gap: 20px;
+}
+
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+  background: var(--mint);
+  border-radius: 12px;
+  border: 1px solid var(--line);
+}
+
+.report-header strong {
+  font-size: 1.25rem;
+  color: var(--ink);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.report-header p {
+  font-size: 1rem;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.report-header small {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.report-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.report-actions button {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.report-content {
+  display: grid;
+  gap: 16px;
+}
+
+.report-content h3 {
+  font-size: 1.1rem;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.report-table {
+  display: grid;
+  gap: 8px;
+}
+
+.report-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  align-items: center;
+}
+
+.report-row > div {
+  display: grid;
+  gap: 4px;
+}
+
+.report-row strong {
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+.report-row small {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.stock-status-low {
+  color: var(--low);
+}
+
+.stock-status-average {
+  color: var(--average);
+}
+
+.stock-status-high {
+  color: var(--high);
+}
+
 .badge {
   min-height: 28px;
   display: inline-flex;

@@ -191,6 +191,8 @@ function App() {
     stock: '',
     capacity: '',
   });
+  const [reportType, setReportType] = useState('');
+  const [generatedReport, setGeneratedReport] = useState(null);
 
   useEffect(() => {
     if (user?.name) {
@@ -859,6 +861,54 @@ function App() {
     if (window.innerWidth <= 900) {
       setDrawerOpen(false);
     }
+  }
+
+  function generateReport(type) {
+    const timestamp = new Date().toLocaleString();
+    const reportData = {
+      storeName,
+      title: type === 'stock' ? 'Stock Report' : 'Sales Report',
+      timestamp,
+      type,
+      data: type === 'stock' ? products : salesHistory
+    };
+    setGeneratedReport(reportData);
+  }
+
+  function downloadReport() {
+    if (!generatedReport) return;
+    
+    const reportContent = `
+${generatedReport.storeName}
+${generatedReport.title}
+Generated: ${generatedReport.timestamp}
+=====================================
+
+${generatedReport.type === 'stock' ? 'STOCKED GOODS' : 'SOLD GOODS'}
+=====================================
+
+${generatedReport.type === 'stock' 
+  ? generatedReport.data.map(p => 
+      `${p.name} (${p.sku})\n  Category: ${p.category}\n  Price: ${formatMoney(p.price)}\n  Stock: ${p.stock}/${p.capacity}\n  Status: ${getStockState(p).label}\n`
+    ).join('\n')
+  : generatedReport.data.map(s => 
+      `Sale #${s.id}\n  Total: ${formatMoney(s.total)}\n  Items: ${s.items.length}\n  Date: ${s.date}\n  Server: ${s.server}\n`
+    ).join('\n')
+}
+
+=====================================
+End of Report
+    `.trim();
+
+    const blob = new Blob([reportContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${generatedReport.storeName.replace(/\s+/g, '_')}_${generatedReport.type}_report_${Date.now()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   if (!user) {
@@ -1675,15 +1725,106 @@ function App() {
             <div className="panel-heading">
               <div>
                 <p>Reports</p>
-                <h2>Supermarket summary</h2>
+                <h2>Generate and download reports</h2>
               </div>
             </div>
-            <div className="report-grid">
-              <article><p>Products registered</p><strong>{products.length}</strong></article>
-              <article><p>Low stock</p><strong>{stockCounts.low}</strong></article>
-              <article><p>Average stock</p><strong>{stockCounts.average}</strong></article>
-              <article><p>High stock</p><strong>{stockCounts.high}</strong></article>
-            </div>
+            
+            {!generatedReport ? (
+              <div className="report-generator">
+                <div className="report-options">
+                  <label>
+                    <span className="label-icon"><Icon name="chart" /> Report Type</span>
+                    <select value={reportType} onChange={(event) => setReportType(event.target.value)}>
+                      <option value="">Select report type...</option>
+                      <option value="stock">Stocked Goods Report</option>
+                      <option value="sold">Sold Goods Report</option>
+                    </select>
+                  </label>
+                </div>
+                <button 
+                  className="generate-report-btn"
+                  onClick={() => reportType && generateReport(reportType)}
+                  disabled={!reportType}
+                >
+                  <Icon name="receipt" /> Generate Report
+                </button>
+              </div>
+            ) : (
+              <div className="report-viewer">
+                <div className="report-header">
+                  <div>
+                    <strong>{generatedReport.storeName}</strong>
+                    <p>{generatedReport.title}</p>
+                    <small>Generated: {generatedReport.timestamp}</small>
+                  </div>
+                  <div className="report-actions">
+                    <button onClick={() => setGeneratedReport(null)} className="cancel-edit">
+                      <Icon name="close" /> Close
+                    </button>
+                    <button onClick={downloadReport}>
+                      <Icon name="print" /> Download Report
+                    </button>
+                  </div>
+                </div>
+                <div className="report-content">
+                  <h3>{generatedReport.type === 'stock' ? 'Stocked Goods' : 'Sold Goods'}</h3>
+                  {generatedReport.type === 'stock' ? (
+                    <div className="report-table">
+                      {generatedReport.data.map((product) => {
+                        const state = getStockState(product);
+                        return (
+                          <div key={product.id} className="report-row">
+                            <div>
+                              <strong>{product.name}</strong>
+                              <small>{product.sku}</small>
+                            </div>
+                            <div>
+                              <small>{product.category}</small>
+                              <strong>{formatMoney(product.price)}</strong>
+                            </div>
+                            <div>
+                              <small>Stock</small>
+                              <strong>{product.stock}/{product.capacity}</strong>
+                            </div>
+                            <div>
+                              <small>Status</small>
+                              <strong className={`stock-status-${state.level}`}>{state.label}</strong>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="report-table">
+                      {generatedReport.data.length === 0 ? (
+                        <p className="empty">No sales recorded yet.</p>
+                      ) : (
+                        generatedReport.data.map((sale) => (
+                          <div key={sale.id} className="report-row">
+                            <div>
+                              <strong>Sale #{sale.id}</strong>
+                              <small>{sale.date}</small>
+                            </div>
+                            <div>
+                              <small>Server</small>
+                              <strong>{sale.server}</strong>
+                            </div>
+                            <div>
+                              <small>Items</small>
+                              <strong>{sale.items.length}</strong>
+                            </div>
+                            <div>
+                              <small>Total</small>
+                              <strong>{formatMoney(sale.total)}</strong>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </section>
         )}
 
