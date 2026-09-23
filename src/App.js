@@ -309,27 +309,30 @@ function App() {
         }
 
         const authData = await authResponse.json();
-        const [productsResponse, salesResponse] = await Promise.all([
-          fetch(`${API_BASE}/products`, {
-            headers: {
-              Authorization: `Bearer ${authToken}`,
-            },
-          }),
-          fetch(`${API_BASE}/sales`, {
-            headers: {
-              Authorization: `Bearer ${authToken}`,
-            },
-          }),
-        ]);
 
-        if (!productsResponse.ok || !salesResponse.ok) {
-          throw new Error('Unable to load dashboard data.');
+        let productsData;
+        let salesData;
+        try {
+          const productsResponse = await fetch(`${API_BASE}/products`, {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          });
+          productsData = productsResponse.ok ? await productsResponse.json() : [];
+        } catch {
+          productsData = [];
         }
 
-        const [productsData, salesData] = await Promise.all([
-          productsResponse.json(),
-          salesResponse.json(),
-        ]);
+        try {
+          const salesResponse = await fetch(`${API_BASE}/sales`, {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          });
+          salesData = salesResponse.ok ? await salesResponse.json() : [];
+        } catch {
+          salesData = [];
+        }
 
         if (cancelled) {
           return;
@@ -337,7 +340,7 @@ function App() {
 
         setUser(authData.user);
         setAuthToken(authToken);
-        setProducts(Array.isArray(productsData) ? productsData : startingProducts);
+        setProducts(Array.isArray(productsData) ? productsData : []);
         const loadedSales = Array.isArray(salesData) ? salesData.map(normalizeSale) : [];
         setSalesHistory(loadedSales);
         if (loadedSales[0]) {
