@@ -768,6 +768,9 @@ function App() {
 
       window.localStorage.setItem('smarthome-token', data.token);
       window.localStorage.setItem('smarthome-user', JSON.stringify(data.user));
+      setProducts([]);
+      setSalesHistory([]);
+      setIsLoading(true);
       setAuthToken(data.token);
       setUser(data.user);
       setAuthForm({ name: '', email: '', password: '' });
