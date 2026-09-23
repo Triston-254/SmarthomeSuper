@@ -656,6 +656,26 @@ function App() {
     setAuthMode(mode);
     setAuthError('');
     setAuthNotice('');
+    setAuthForm({ name: '', email: '', password: '' });
+    setShowPassword(false);
+  }
+
+  function enterResetMode() {
+    setResetMode(true);
+    setResetEmail('');
+    setResetToken('');
+    setResetForm({ password: '', confirm: '' });
+    setResetError('');
+    setResetNotice('');
+  }
+
+  function exitResetMode() {
+    setResetMode(false);
+    setResetEmail('');
+    setResetToken('');
+    setResetForm({ password: '', confirm: '' });
+    setResetError('');
+    setResetNotice('');
   }
 
   async function handleAuthSubmit(event) {
@@ -702,6 +722,7 @@ function App() {
         setAuthForm({ name: '', email: payload.email, password: '' });
         setAuthMode('login');
         setAuthNotice('Account created. Sign in to continue.');
+        showToast('Account created successfully.', 'success');
         return;
       }
 
@@ -712,7 +733,7 @@ function App() {
       setAuthForm({ name: '', email: '', password: '' });
       setAuthError('');
       setActivePage('dashboard');
-      setMessage(`Welcome, ${data.user.name}.`);
+      showToast(`Welcome, ${data.user.name}.`, 'success');
     } catch (error) {
       setAuthError(error.message || 'Authentication failed.');
     } finally {
@@ -806,6 +827,7 @@ function App() {
     setReceipt(null);
     setActivePage('dashboard');
     setMessage('Ready for the next customer.');
+    showToast('You have been logged out.', 'success');
   }
 
   function goToPage(pageId) {
@@ -890,7 +912,7 @@ function App() {
 
               {authMode === 'login' && (
                 <p className="auth-footer-link">
-                  <button type="button" onClick={() => { setResetMode(true); setResetError(''); setResetNotice(''); }} className="link-button">
+                  <button type="button" onClick={enterResetMode} className="link-button">
                     Forgot your password?
                   </button>
                 </p>
@@ -924,7 +946,7 @@ function App() {
               {resetError && <p className="auth-error" role="alert">{resetError}</p>}
               {resetNotice && <p className="auth-notice" role="status">{resetNotice}</p>}
               <p className="auth-footer-link">
-                <button type="button" onClick={() => { setResetMode(false); setResetToken(''); setResetForm({ password: '', confirm: '' }); }} className="link-button">
+                <button type="button" onClick={exitResetMode} className="link-button">
                   Back to login
                 </button>
               </p>
@@ -948,7 +970,7 @@ function App() {
               {resetError && <p className="auth-error" role="alert">{resetError}</p>}
               {resetNotice && <p className="auth-notice" role="status">{resetNotice}</p>}
               <p className="auth-footer-link">
-                <button type="button" onClick={() => { setResetMode(false); setResetEmail(''); }} className="link-button">
+                <button type="button" onClick={exitResetMode} className="link-button">
                   Back to login
                 </button>
               </p>
@@ -966,6 +988,7 @@ function App() {
         <div className={`toast toast-${toast.type}`} role="status">
           <Icon name={toast.type === 'error' ? 'bell' : 'check'} size={18} />
           <span>{toast.text}</span>
+          <span className="toast-progress" />
         </div>
       )}
       {isLoading && (
