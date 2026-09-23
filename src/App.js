@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
+import { jsPDF } from 'jspdf';
 import './App.css';
 
 const storeName = 'Smarthome Supermarket';
@@ -877,38 +878,95 @@ function App() {
 
   function downloadReport() {
     if (!generatedReport) return;
-    
-    const reportContent = `
-${generatedReport.storeName}
-${generatedReport.title}
-Generated: ${generatedReport.timestamp}
-=====================================
+    const pdf = new jsPDF();
+    const margin = 18;
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    let y = 22;
 
-${generatedReport.type === 'stock' ? 'STOCKED GOODS' : 'SOLD GOODS'}
-=====================================
+    pdf.setFillColor(194, 65, 12);
+    pdf.rect(0, 0, pageWidth, 12, 'F');
+    pdf.setTextColor(43, 29, 19);
+    pdf.setFontSize(20);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(generatedReport.storeName, margin, y);
+    y += 9;
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(generatedReport.title, margin, y);
+    y += 7;
+    pdf.setFontSize(9);
+    pdf.setTextColor(124, 90, 67);
+    pdf.text(`Generated ${generatedReport.timestamp}`, margin, y);
+    y += 14;
 
-${generatedReport.type === 'stock' 
-  ? generatedReport.data.map(p => 
-      `${p.name} (${p.sku})\n  Category: ${p.category}\n  Price: ${formatMoney(p.price)}\n  Stock: ${p.stock}/${p.capacity}\n  Status: ${getStockState(p).label}\n`
-    ).join('\n')
-  : generatedReport.data.map(s => 
-      `Sale #${s.id}\n  Total: ${formatMoney(s.total)}\n  Items: ${s.items.length}\n  Date: ${s.date}\n  Server: ${s.server}\n`
-    ).join('\n')
-}
+    const rows = generatedReport.type === 'stock'
+      ? generatedReport.data.map((product) => [
+        product.name,
+        product.sku,
+        product.category,
+        formatMoney(product.price),
+        `${product.stock}/${product.capacity}`,
+        getStockState(product).label,
+      ])
+      : generatedReport.data.map((sale) => [
+        `Sale #${sale.id}`,
+        sale.date || sale.dateLabel || 'Date unavailable',
+        sale.server || 'Unknown server',
+        `${sale.items.length} item${sale.items.length === 1 ? '' : 's'}`,
+        formatMoney(sale.total),
+      ]);
 
-=====================================
-End of Report
-    `.trim();
+    pdf.setFillColor(255, 244, 235);
+    pdf.roundedRect(margin, y, pageWidth - margin * 2, 18, 3, 3, 'F');
+    pdf.setTextColor(154, 59, 10);
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(`${rows.length} record${rows.length === 1 ? '' : 's'}`, margin + 6, y + 11);
+    y += 28;
 
-    const blob = new Blob([reportContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${generatedReport.storeName.replace(/\s+/g, '_')}_${generatedReport.type}_report_${Date.now()}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    if (rows.length === 0) {
+      pdf.setTextColor(124, 90, 67);
+      pdf.setFontSize(13);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('No data available yet', margin, y);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(10);
+      pdf.text('Complete an inventory update or sale to populate this report.', margin, y + 8);
+    } else {
+      const headers = generatedReport.type === 'stock'
+        ? ['Product', 'SKU', 'Category', 'Price', 'Stock', 'Status']
+        : ['Reference', 'Date', 'Server', 'Items', 'Total'];
+      const columnWidth = (pageWidth - margin * 2) / headers.length;
+      pdf.setFillColor(249, 115, 22);
+      pdf.rect(margin, y - 6, pageWidth - margin * 2, 9, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(8);
+      headers.forEach((header, index) => pdf.text(header, margin + index * columnWidth + 2, y));
+      y += 9;
+      rows.forEach((row, rowIndex) => {
+        if (y > pageHeight - 18) {
+          pdf.addPage();
+          y = 22;
+        }
+        if (rowIndex % 2 === 0) {
+          pdf.setFillColor(255, 250, 245);
+          pdf.rect(margin, y - 6, pageWidth - margin * 2, 10, 'F');
+        }
+        pdf.setTextColor(43, 29, 19);
+        pdf.setFontSize(7.5);
+        row.forEach((value, index) => {
+          const text = String(value).slice(0, index === 0 ? 24 : 18);
+          pdf.text(text, margin + index * columnWidth + 2, y);
+        });
+        y += 10;
+      });
+    }
+
+    pdf.setFontSize(8);
+    pdf.setTextColor(124, 90, 67);
+    pdf.text('Smarthome Supermarket', margin, pageHeight - 10);
+    pdf.save(`${generatedReport.storeName.replace(/\s+/g, '_')}_${generatedReport.type}_report.pdf`);
   }
 
   if (!user) {
@@ -1715,7 +1773,13 @@ End of Report
                 </h3>
               </div>
             ) : (
-              <p className="empty">Complete a sale to generate a customer receipt.</p>
+              <EmptyState
+                icon="receipt"
+                title="No receipt yet"
+                message="Complete a sale and your customer receipt will appear here, ready to print."
+                action="Start selling"
+                onAction={() => goToPage('sell')}
+              />
             )}
           </section>
         )}
@@ -1762,7 +1826,7 @@ End of Report
                       <Icon name="close" /> Close
                     </button>
                     <button onClick={downloadReport}>
-                      <Icon name="print" /> Download Report
+                      <Icon name="print" /> Save as PDF
                     </button>
                   </div>
                 </div>
@@ -1770,7 +1834,15 @@ End of Report
                   <h3>{generatedReport.type === 'stock' ? 'Stocked Goods' : 'Sold Goods'}</h3>
                   {generatedReport.type === 'stock' ? (
                     <div className="report-table">
-                      {generatedReport.data.map((product) => {
+                      {generatedReport.data.length === 0 ? (
+                        <EmptyState
+                          icon="boxes"
+                          title="No stock data yet"
+                          message="Add goods to inventory before generating a stocked-goods report."
+                          action="Add stock"
+                          onAction={() => goToPage('add-stock')}
+                        />
+                      ) : generatedReport.data.map((product) => {
                         const state = getStockState(product);
                         return (
                           <div key={product.id} className="report-row">
@@ -1797,7 +1869,13 @@ End of Report
                   ) : (
                     <div className="report-table">
                       {generatedReport.data.length === 0 ? (
-                        <p className="empty">No sales recorded yet.</p>
+                        <EmptyState
+                          icon="chart"
+                          title="No sales to report"
+                          message="Complete your first sale to see totals, servers, and order details in this report."
+                          action="Start selling"
+                          onAction={() => goToPage('sell')}
+                        />
                       ) : (
                         generatedReport.data.map((sale) => (
                           <div key={sale.id} className="report-row">
@@ -1884,7 +1962,13 @@ End of Report
                 const rangeMs = historyRange === 'day' ? 24 * 60 * 60 * 1000 : historyRange === 'week' ? 7 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
                 return now - sale.timestamp <= rangeMs;
               }).length === 0 && (
-                <p className="empty">No sales recorded in this time range.</p>
+                <EmptyState
+                  icon="chart"
+                  title={`No sales this ${historyRange}`}
+                  message="Sales will appear here after a completed checkout. Try another date range or start a new sale."
+                  action="Start selling"
+                  onAction={() => goToPage('sell')}
+                />
               )}
             </div>
           </section>
@@ -1945,6 +2029,21 @@ End of Report
       </section>
     </div>
         </main>
+      )}
+    </div>
+  );
+}
+
+function EmptyState({ icon, title, message, action, onAction }) {
+  return (
+    <div className="empty-state">
+      <span className="empty-state-icon"><Icon name={icon} size={26} /></span>
+      <strong>{title}</strong>
+      <p>{message}</p>
+      {action && onAction && (
+        <button type="button" onClick={onAction}>
+          <Icon name={icon === 'receipt' ? 'cart' : 'plus'} size={17} /> {action}
+        </button>
       )}
     </div>
   );

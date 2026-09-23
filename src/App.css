@@ -1221,9 +1221,78 @@ select:focus {
 }
 
 .cart-row b {
+.empty-state {
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 28px 20px;
+  border: 1px dashed rgba(249, 115, 22, 0.32);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255, 250, 245, 0.96), rgba(255, 241, 230, 0.9));
+  text-align: center;
+}
+.empty-state-icon {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  color: var(--green-dark);
+  background: rgba(249, 115, 22, 0.13);
+}
+.empty-state strong {
+  font-size: 1.05rem;
+}
+.empty-state p {
+  max-width: 420px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.empty-state button {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 0 14px;
+  border-radius: 8px;
+  color: white;
+  background: var(--green);
+  font-weight: 800;
+}
   text-align: right;
 }
 
+  .report-viewer {
+    display: block;
+    border: 0;
+    box-shadow: none;
+  }
+  .report-viewer .report-actions,
+  .report-viewer .report-actions button {
+    display: none;
+  }
+  .report-header {
+    border-bottom: 2px solid #222;
+  }
+  .report-content,
+  .report-table,
+  .report-row {
+    color: #111;
+    background: white;
+    border-color: #bbb;
+  }
+  .report-row {
+    break-inside: avoid;
+  }
+  .report-generator,
+  .sales-panel,
+  .receipt-panel:not(:has(.receipt)) {
+    display: none;
+  }
 .checkout-row {
   display: flex;
   align-items: center;
