@@ -32,7 +32,7 @@ const stockLinks = [
   { id: 'sell', label: 'Sell stock', icon: 'cart' },
   { id: 'add-stock', label: 'Add stock', icon: 'plus' },
   { id: 'stock', label: 'View stock', icon: 'boxes' },
-  { id: 'stock-alerts', label: 'Stock alerts', icon: 'bell' },
+  { id: 'stock-alerts', label: 'Stock Alert', icon: 'bell' },
 ];
 
 const iconPaths = {
@@ -1289,7 +1289,7 @@ function App() {
             </div>
           </div>
           <nav>
-            {pages.filter((page) => page.id !== 'sell' && page.id !== 'stock' && page.id !== 'add-stock').map((page) => (
+            {pages.filter((page) => page.id === 'dashboard').map((page) => (
               <button
                 className={activePage === page.id ? 'active' : ''}
                 key={page.id}
@@ -1329,6 +1329,18 @@ function App() {
                 ))}
               </div>
             </div>
+
+            {pages.filter((page) => page.id !== 'dashboard' && page.id !== 'sell' && page.id !== 'stock' && page.id !== 'add-stock' && page.id !== 'stock-alerts').map((page) => (
+              <button
+                className={activePage === page.id ? 'active' : ''}
+                key={page.id}
+                onClick={() => goToPage(page.id)}
+                title={page.label}
+              >
+                <span><Icon name={page.icon} /></span>
+                <b>{page.label}</b>
+              </button>
+            ))}
           </nav>
 
           <div className="sidebar-footer">
