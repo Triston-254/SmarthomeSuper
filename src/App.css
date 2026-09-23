@@ -1206,7 +1206,7 @@ select:focus {
 .toast {
   position: fixed;
   right: 22px;
-  bottom: 22px;
+  top: 22px;
   z-index: 100;
   max-width: min(360px, calc(100vw - 44px));
   display: flex;

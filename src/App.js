@@ -983,7 +983,7 @@ function App() {
   }
 
   return (
-    <main className={`app ${theme} ${drawerOpen ? 'drawer-open' : 'drawer-closed'} ${isMobileLayout ? 'is-mobile' : 'is-desktop'} font-${font.toLowerCase()}`}>
+    <div className="app-root">
       {toast && (
         <div className={`toast toast-${toast.type}`} role="status">
           <Icon name={toast.type === 'error' ? 'bell' : 'check'} size={18} />
@@ -991,14 +991,156 @@ function App() {
           <span className="toast-progress" />
         </div>
       )}
-      {isLoading && (
-        <div className="loading-overlay" aria-live="polite" aria-label="Loading supermarket app">
-          <div className="loading-glass">
-            <div className="loading-spinner" />
-            <span>Loading</span>
+
+      {!user ? (
+        <main className="app auth-shell">
+          <div className="auth-card">
+            {!resetMode ? (
+              <>
+                <div className="auth-brand">
+                  <span className="brand-icon"><Icon name="cart" /></span>
+                  <div>
+                    <strong>{storeName}</strong>
+                    <small>Smart retail dashboard</small>
+                  </div>
+                </div>
+
+                <div className="auth-tabs">
+                  <button className={authMode === 'login' ? 'active' : ''} onClick={() => switchAuthMode('login')}>Login</button>
+                  <button className={authMode === 'signup' ? 'active' : ''} onClick={() => switchAuthMode('signup')}>Sign up</button>
+                </div>
+
+                <form className="auth-form" onSubmit={handleAuthSubmit}>
+                  {authMode === 'signup' && (
+                    <label>
+                      <span>Full name</span>
+                      <input
+                        type="text"
+                        value={authForm.name}
+                        onChange={(event) => setAuthForm({ ...authForm, name: event.target.value })}
+                        placeholder="Store manager"
+                      />
+                    </label>
+                  )}
+
+                  <label>
+                    <span>Email</span>
+                    <input
+                      type="email"
+                      value={authForm.email}
+                      onChange={(event) => setAuthForm({ ...authForm, email: event.target.value })}
+                      placeholder="manager@smarthome.com"
+                    />
+                  </label>
+
+                  <label className="password-field">
+                    <span>Password</span>
+                    <div className="password-input-wrap">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={authForm.password}
+                        onChange={(event) => setAuthForm({ ...authForm, password: event.target.value })}
+                        placeholder="Enter password"
+                        autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
+                      />
+                      <button
+                        type="button"
+                        className="password-toggle"
+                        onClick={() => setShowPassword((show) => !show)}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        <Icon name={showPassword ? 'eye-off' : 'eye'} size={18} />
+                      </button>
+                    </div>
+                  </label>
+
+                  <button type="submit" className={`auth-submit ${isAuthLoading ? 'loading' : ''}`} disabled={isAuthLoading}>
+                    {isAuthLoading ? (authMode === 'login' ? 'Signing in...' : 'Creating account...') : (authMode === 'login' ? 'Login to dashboard' : 'Create account')}
+                  </button>
+                </form>
+
+                {authNotice && <p className="auth-notice" role="status">{authNotice}</p>}
+                {authError && <p className="auth-error" role="alert">{authError}</p>}
+
+                {authMode === 'login' && (
+                  <p className="auth-footer-link">
+                    <button type="button" onClick={enterResetMode} className="link-button">
+                      Forgot your password?
+                    </button>
+                  </p>
+                )}
+              </>
+            ) : resetToken ? (
+              <form className="auth-form" onSubmit={handleResetSubmit}>
+                <p className="auth-notice">Enter a new password for your account.</p>
+                <label>
+                  <span>New password</span>
+                  <input
+                    type="password"
+                    value={resetForm.password}
+                    onChange={(event) => setResetForm({ ...resetForm, password: event.target.value })}
+                    placeholder="At least 6 characters"
+                    autoFocus
+                  />
+                </label>
+                <label>
+                  <span>Confirm new password</span>
+                  <input
+                    type="password"
+                    value={resetForm.confirm}
+                    onChange={(event) => setResetForm({ ...resetForm, confirm: event.target.value })}
+                    placeholder="Repeat new password"
+                  />
+                </label>
+                <button type="submit" className={`auth-submit ${isResetLoading ? 'loading' : ''}`} disabled={isResetLoading}>
+                  {isResetLoading ? 'Resetting password...' : 'Reset password'}
+                </button>
+                {resetError && <p className="auth-error" role="alert">{resetError}</p>}
+                {resetNotice && <p className="auth-notice" role="status">{resetNotice}</p>}
+                <p className="auth-footer-link">
+                  <button type="button" onClick={exitResetMode} className="link-button">
+                    Back to login
+                  </button>
+                </p>
+              </form>
+            ) : (
+              <form className="auth-form" onSubmit={handleRequestReset}>
+                <p className="auth-notice">Enter your email to receive a password reset link.</p>
+                <label>
+                  <span>Email address</span>
+                  <input
+                    type="email"
+                    value={resetEmail}
+                    onChange={(event) => setResetEmail(event.target.value)}
+                    placeholder="manager@smarthome.com"
+                    autoFocus
+                  />
+                </label>
+                <button type="submit" className={`auth-submit ${isResetLoading ? 'loading' : ''}`} disabled={isResetLoading}>
+                  {isResetLoading ? 'Sending link...' : 'Send reset link'}
+                </button>
+                {resetError && <p className="auth-error" role="alert">{resetError}</p>}
+                {resetNotice && <p className="auth-notice" role="status">{resetNotice}</p>}
+                <p className="auth-footer-link">
+                  <button type="button" onClick={exitResetMode} className="link-button">
+                    Back to login
+                  </button>
+                </p>
+              </form>
+            )}
+
           </div>
-        </div>
-      )}
+        </main>
+      ) : (
+        <main className={`app ${theme} ${drawerOpen ? 'drawer-open' : 'drawer-closed'} ${isMobileLayout ? 'is-mobile' : 'is-desktop'} font-${font.toLowerCase()}`}>
+          {isLoading && (
+            <div className="loading-overlay" aria-live="polite" aria-label="Loading supermarket app">
+              <div className="loading-glass">
+                <div className="loading-spinner" />
+                <span>Loading</span>
+              </div>
+            </div>
+          )}
 
       <header className="topbar">
         <div className="top-left">
