@@ -3,7 +3,6 @@ import { Html5Qrcode } from 'html5-qrcode';
 import './App.css';
 
 const storeName = 'Smarthome Supermarket';
-const storeLocation = 'Kisii';
 const API_BASE = process.env.REACT_APP_API_BASE || '/api';
 const defaultCategories = ['Beverages', 'Food', 'Household', 'Personal Care', 'Electronics', 'Stationary', 'Clothing'];
 
@@ -126,6 +125,7 @@ function App() {
   const [authMode, setAuthMode] = useState('login');
   const [authForm, setAuthForm] = useState({ name: '', email: '', password: '' });
   const [authError, setAuthError] = useState('');
+  const [authNotice, setAuthNotice] = useState('');
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [user, setUser] = useState(() => {
     try {
@@ -140,7 +140,7 @@ function App() {
   const [products, setProducts] = useState(startingProducts);
   const [cart, setCart] = useState([]);
   const [scanCode, setScanCode] = useState('');
-  const [saleDetails, setSaleDetails] = useState({ buyer: '', server: 'Manager' });
+  const [saleDetails, setSaleDetails] = useState({ buyer: '', server: '' });
   const [message, setMessage] = useState('Ready for the next customer.');
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(null);
@@ -171,6 +171,12 @@ function App() {
     stock: '',
     capacity: '',
   });
+
+  useEffect(() => {
+    if (user?.name) {
+      setSaleDetails((current) => ({ ...current, server: user.name }));
+    }
+  }, [user]);
   const canSubmitProduct = productForm.name.trim().length > 0
     && Number(productForm.price) > 0
     && Number(productForm.stock) >= 0
@@ -491,7 +497,7 @@ function App() {
 
     const payload = {
       buyer: saleDetails.buyer.trim() || 'Walk-in Customer',
-      server: saleDetails.server.trim() || 'Manager',
+      server: user?.name || saleDetails.server.trim() || 'Signed-in user',
       total: Number(cartTotal.toFixed(2)),
       items: cart.map((item) => ({
         id: item.id,
@@ -524,7 +530,6 @@ function App() {
         date: servedAt.toLocaleDateString('en-KE'),
         server: data.server || payload.server,
         buyer: data.buyer || payload.buyer,
-        location: storeLocation,
         items: data.items || cart,
         total: data.total,
       };
@@ -639,11 +644,13 @@ function App() {
   function switchAuthMode(mode) {
     setAuthMode(mode);
     setAuthError('');
+    setAuthNotice('');
   }
 
   async function handleAuthSubmit(event) {
     event.preventDefault();
     setAuthError('');
+    setAuthNotice('');
     setIsAuthLoading(true);
 
     const payload = {
@@ -678,6 +685,13 @@ function App() {
 
       if (!response.ok) {
         throw new Error(data.message || 'Authentication failed.');
+      }
+
+      if (authMode === 'signup') {
+        setAuthForm({ name: '', email: payload.email, password: '' });
+        setAuthMode('login');
+        setAuthNotice('Account created. Sign in to continue.');
+        return;
       }
 
       window.localStorage.setItem('smarthome-token', data.token);
@@ -773,6 +787,7 @@ function App() {
             </button>
           </form>
 
+          {authNotice && <p className="auth-notice" role="status">{authNotice}</p>}
           {authError && <p className="auth-error" role="alert">{authError}</p>}
 
         </div>
@@ -810,8 +825,11 @@ function App() {
           </button>
           <div>
             <h1>{storeName}</h1>
-            <p className="topbar-subtitle">{storeLocation} · Live dashboard</p>
           </div>
+        </div>
+        <div className="topbar-user" aria-label={`Signed in as ${user?.name || 'user'}`}>
+          <span>Welcome</span>
+          <strong>{user?.name || 'User'}</strong>
         </div>
         <div className="header-actions">
           <div className="notification-wrap">
@@ -1077,9 +1095,10 @@ function App() {
                 placeholder="Buyer name"
               />
               <input
-                value={saleDetails.server}
-                onChange={(event) => setSaleDetails({ ...saleDetails, server: event.target.value })}
-                placeholder="Server name"
+                value={user?.name || saleDetails.server}
+                readOnly
+                aria-label="Server name"
+                placeholder="Signed-in user"
               />
             </div>
 
@@ -1130,7 +1149,14 @@ function App() {
               <button onClick={() => goToPage('stock')}><Icon name="boxes" /> View all stock</button>
             </div>
 
-            {stockAlertItems.length > 0 ? (
+            {products.length === 0 ? (
+              <div className="all-clear stock-empty-state">
+                <span className="all-clear-icon"><Icon name="boxes" size={24} /></span>
+                <strong>No goods have been stocked yet.</strong>
+                <small>Add your first product to start tracking inventory and stock alerts.</small>
+                <button onClick={() => goToPage('add-stock')}><Icon name="plus" /> Add first product</button>
+              </div>
+            ) : stockAlertItems.length > 0 ? (
               <div className="alert-grid">
                 {stockAlertItems.map((product) => {
                   const state = getStockState(product);

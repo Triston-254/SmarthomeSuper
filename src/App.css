@@ -322,6 +322,7 @@ button {
   box-shadow: 0 16px 32px rgba(154, 59, 10, 0.2);
   color: white;
   width: 100%;
+  position: relative;
 }
 
 .topbar h1,
@@ -334,9 +335,10 @@ button {
   min-width: 0;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   gap: 12px;
-  text-align: left;
+  text-align: center;
+  min-height: 44px;
 }
 
 .topbar h1 {
@@ -350,6 +352,30 @@ button {
   color: rgba(255, 255, 255, 0.86);
   font-size: 0.78rem;
   font-weight: 600;
+}
+
+.topbar-user {
+  position: absolute;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  gap: 2px;
+  width: 150px;
+  min-width: 150px;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0.72rem;
+  line-height: 1.15;
+}
+
+.topbar-user strong {
+  overflow: hidden;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .mobile-menu-button {
@@ -698,13 +724,18 @@ select:focus {
   justify-content: space-between;
   gap: 12px;
   align-items: center;
+  min-height: 42px;
   padding: 7px 12px;
   border-radius: 8px;
   font-size: 0.78rem;
 }
 
 .status-strip strong {
+  min-width: 0;
+  overflow: hidden;
   font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .stock-key {
@@ -831,6 +862,24 @@ select:focus {
 
 .stock-alerts-panel {
   min-height: 100%;
+}
+
+.stock-empty-state {
+  min-height: 260px;
+  gap: 10px;
+}
+
+.stock-empty-state button {
+  margin-top: 6px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border-radius: 8px;
+  color: white;
+  background: var(--green);
+  font-weight: 800;
 }
 
 .alert-grid {
@@ -1957,8 +2006,14 @@ select:focus {
   }
 
   .top-left {
-    justify-content: flex-start;
-    text-align: left;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .topbar-user {
+    left: 14px;
+    width: 108px;
+    min-width: 108px;
   }
 
   .status-strip {
@@ -2002,6 +2057,21 @@ select:focus {
   .topbar {
     grid-template-columns: minmax(0, 1fr) auto;
     padding: 10px 12px;
+  }
+
+  .topbar-user {
+    left: 12px;
+    width: 82px;
+    min-width: 82px;
+    font-size: 0.64rem;
+  }
+
+  .topbar-user strong {
+    font-size: 0.68rem;
+  }
+
+  .topbar h1 {
+    font-size: 1.05rem;
   }
 
   .topbar-subtitle {
