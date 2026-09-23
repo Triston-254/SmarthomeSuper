@@ -156,7 +156,14 @@ function App() {
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(null);
   const [receipt, setReceipt] = useState(null);
-  const [activePage, setActivePage] = useState('dashboard');
+  const [activePage, setActivePage] = useState(() => {
+    try {
+      const saved = window.localStorage.getItem('smarthome-active-page');
+      return saved || 'dashboard';
+    } catch (error) {
+      return 'dashboard';
+    }
+  });
   const [drawerOpen, setDrawerOpen] = useState(() => (
     typeof window === 'undefined' ? true : window.innerWidth > 900
   ));
@@ -259,6 +266,14 @@ function App() {
   useEffect(() => {
     document.title = receipt ? `${storeName} Receipt ${receipt.ticket}` : `${storeName} Dashboard`;
   }, [receipt]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('smarthome-active-page', activePage);
+    } catch (error) {
+      // Ignore localStorage errors
+    }
+  }, [activePage]);
 
   useEffect(() => {
     if (!authToken) {
@@ -844,6 +859,27 @@ function App() {
   }
 
   if (!user) {
+    if (isLoading && authToken) {
+      return (
+        <div className="app-root">
+          <main className="app auth-shell">
+            <div className="auth-card">
+              <div className="auth-brand">
+                <span className="brand-icon"><Icon name="cart" /></span>
+                <div>
+                  <strong>{storeName}</strong>
+                  <small>Smart retail dashboard</small>
+                </div>
+              </div>
+              <div className="auth-form">
+                <p>Loading your session...</p>
+              </div>
+            </div>
+          </main>
+        </div>
+      );
+    }
+
     return (
       <div className="app-root">
         {toast && (
@@ -889,7 +925,7 @@ function App() {
                     type="email"
                     value={authForm.email}
                     onChange={(event) => setAuthForm({ ...authForm, email: event.target.value })}
-                    placeholder="manager@smarthome.com"
+                    placeholder="your.email@example.com"
                   />
                 </label>
 
@@ -972,7 +1008,7 @@ function App() {
                   type="email"
                   value={resetEmail}
                   onChange={(event) => setResetEmail(event.target.value)}
-                  placeholder="manager@smarthome.com"
+                  placeholder="your.email@example.com"
                   autoFocus
                 />
               </label>
@@ -1042,7 +1078,7 @@ function App() {
                       type="email"
                       value={authForm.email}
                       onChange={(event) => setAuthForm({ ...authForm, email: event.target.value })}
-                      placeholder="manager@smarthome.com"
+                      placeholder="your.email@example.com"
                     />
                   </label>
 
@@ -1125,7 +1161,7 @@ function App() {
                     type="email"
                     value={resetEmail}
                     onChange={(event) => setResetEmail(event.target.value)}
-                    placeholder="manager@smarthome.com"
+                    placeholder="your.email@example.com"
                     autoFocus
                   />
                 </label>
