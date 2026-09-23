@@ -19,10 +19,10 @@ const startingProducts = [
 
 const pages = [
   { id: 'dashboard', label: 'Dashboard', icon: 'layout' },
-  { id: 'sell', label: 'Selling', icon: 'cart' },
   { id: 'stock', label: 'Stock Available', icon: 'boxes' },
   { id: 'stock-alerts', label: 'Stock Alerts', icon: 'bell' },
   { id: 'add-stock', label: 'Add Stock', icon: 'plus' },
+  { id: 'sell', label: 'Selling', icon: 'cart' },
   { id: 'receipt', label: 'Receipts', icon: 'receipt' },
   { id: 'reports', label: 'Reports', icon: 'chart' },
   { id: 'sales-history', label: 'Sales History', icon: 'receipt' },
@@ -58,6 +58,8 @@ const iconPaths = {
   eye: ['M2 12s3-7 10-7 10 7-3 7-10 7-10-7z', 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z'],
   'eye-off': ['M9.9 4.2A9.9 9.9 0 0 1 12 4c7 0 10 8 10 8a18 18 0 0 1-2.6 3.6', 'M6.6 6.6A18 18 0 0 0 2 12s3 7 10 7a9.9 9.9 0 0 0 5.4-1.6', 'M3 3l18 18'],
   mail: ['M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z', 'M22 6 12 13 2 6'],
+  moon: ['M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z'],
+  sun: ['M12 1v2', 'M12 21v2', 'M4.22 4.22l1.42 1.42', 'M18.36 18.36l1.42 1.42', 'M1 12h2', 'M21 12h2', 'M4.22 19.78l1.42-1.42', 'M18.36 5.64l1.42-1.42', 'M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10z'],
 };
 
 function Icon({ name, size = 20 }) {
@@ -1335,6 +1337,15 @@ function App() {
             </button>
           </div>
         </aside>
+
+        <button
+          className="theme-toggle"
+          onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+          title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+          aria-label="Toggle theme"
+        >
+          <Icon name={theme === 'light' ? 'moon' : 'sun'} size={20} />
+        </button>
 
         <section className="workspace">
           <section className="status-strip">

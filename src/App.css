@@ -263,31 +263,37 @@ button {
   display: flex;
   gap: 12px;
   align-items: center;
-  padding: 12px;
-  border-radius: 10px;
+  padding: 14px;
+  border-radius: 12px;
   color: #fff8f3;
   background: transparent;
   text-align: left;
   transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  font-size: 0.95rem;
 }
 
 .sidebar button:hover,
 .sidebar button.active {
-  background: rgba(255, 255, 255, 0.12);
-  transform: translateX(2px);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.09);
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateX(3px);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);
 }
 
 .sidebar button span {
-  width: 31px;
-  height: 31px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.12);
-  font-size: 0.78rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.15);
+  font-size: 0.85rem;
   font-weight: 900;
+}
+
+.sidebar button b {
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
 .workspace {
@@ -727,8 +733,8 @@ select:focus {
   justify-content: space-between;
   gap: 12px;
   align-items: center;
-  height: 42px;
-  padding: 7px 12px;
+  height: 52px;
+  padding: 10px 14px;
   border-radius: 8px;
   font-size: 0.78rem;
 }
@@ -744,7 +750,7 @@ select:focus {
 .status-welcome {
   color: var(--green);
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 1.15rem;
   white-space: nowrap;
 }
 
@@ -754,6 +760,30 @@ select:focus {
   font-size: 0.82rem;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.theme-toggle {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--green);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(194, 65, 12, 0.15);
+  transition: all 0.2s ease;
+}
+
+.theme-toggle:hover {
+  background: var(--mint);
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(194, 65, 12, 0.25);
 }
 
 .stock-key {
@@ -1543,25 +1573,43 @@ select:focus {
 
 .profile-card {
   display: flex;
-  gap: 14px;
+  gap: 20px;
   align-items: center;
+  padding: 24px;
+  background: var(--mint);
+  border-radius: 12px;
+  border: 1px solid var(--line);
 }
 
 .profile-card > span {
-  width: 58px;
-  height: 58px;
+  width: 72px;
+  height: 72px;
   display: grid;
   place-items: center;
   border-radius: 50%;
   color: white;
   background: var(--green);
   font-weight: 900;
+  font-size: 1.5rem;
+  box-shadow: 0 4px 12px rgba(194, 65, 12, 0.2);
+}
+
+.profile-card div {
+  flex: 1;
+}
+
+.profile-card strong {
+  font-size: 1.25rem;
+  color: var(--ink);
+  margin-bottom: 6px;
+  display: block;
 }
 
 .profile-card small {
   display: block;
   color: var(--muted);
-  margin-top: 4px;
+  margin-top: 6px;
+  font-size: 0.9rem;
 }
 
 .settings-form {
