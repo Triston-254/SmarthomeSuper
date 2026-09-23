@@ -2059,9 +2059,16 @@ select:focus {
 }
 
 .drawer-section.open .drawer-subnav {
-  max-height: 180px;
+  max-height: 240px;
   opacity: 1;
   margin-top: 4px;
+}
+
+.drawer-subnav button b {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sidebar-footer {
