@@ -56,6 +56,7 @@ const iconPaths = {
   check: ['M5 12l4 4L19 6'],
   'chevron-down': ['M6 9l6 6 6-6'],
   'chevron-up': ['M6 15l6-6 6 6'],
+  trash: ['M3 6h18v2H3z', 'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2', 'M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2L18 6'],
   eye: ['M2 12s3-7 10-7 10 7-3 7-10 7-10-7z', 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z'],
   'eye-off': ['M9.9 4.2A9.9 9.9 0 0 1 12 4c7 0 10 8 10 8a18 18 0 0 1-2.6 3.6', 'M6.6 6.6A18 18 0 0 0 2 12s3 7 10 7a9.9 9.9 0 0 0 5.4-1.6', 'M3 3l18 18'],
   mail: ['M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z', 'M22 6 12 13 2 6'],
@@ -141,6 +142,7 @@ function App() {
   const [resetError, setResetError] = useState('');
   const [resetNotice, setResetNotice] = useState('');
   const [isResetLoading, setIsResetLoading] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(null);
   const [user, setUser] = useState(() => {
     try {
       const savedToken = window.localStorage.getItem('smarthome-token');
@@ -181,7 +183,7 @@ function App() {
   const [stockCategory, setStockCategory] = useState('All');
   const [theme, setTheme] = useState('light');
   const [font, setFont] = useState('Inter');
-  const [historyRange, setHistoryRange] = useState('day');
+  const [historyRange, setHistoryRange] = useState('all');
   const [salesHistory, setSalesHistory] = useState([]);
   const [passwordForm, setPasswordForm] = useState({ current: '', next: '' });
   const [productForm, setProductForm] = useState({
@@ -230,7 +232,7 @@ function App() {
 
   const salesSummary = useMemo(() => {
     const now = Date.now();
-    const rangeMs = historyRange === 'day' ? 24 * 60 * 60 * 1000 : historyRange === 'week' ? 7 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
+    const rangeMs = historyRange === 'all' ? Infinity : historyRange === 'day' ? 24 * 60 * 60 * 1000 : historyRange === 'week' ? 7 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
     const filteredSales = salesHistory.filter((sale) => now - sale.timestamp <= rangeMs);
     const totalSales = filteredSales.reduce((sum, sale) => sum + sale.total, 0);
     const customersServed = filteredSales.length;
@@ -332,7 +334,21 @@ function App() {
         setUser(authData.user);
         setAuthToken(authToken);
         setProducts(Array.isArray(productsData) ? productsData : startingProducts);
-        setSalesHistory(Array.isArray(salesData) ? salesData.map(normalizeSale) : []);
+        const loadedSales = Array.isArray(salesData) ? salesData.map(normalizeSale) : [];
+        setSalesHistory(loadedSales);
+        if (loadedSales[0]) {
+          const latestSale = loadedSales[0];
+          const latestDate = new Date(latestSale.timestamp);
+          setReceipt({
+            ticket: latestSale.ticket,
+            servedAt: latestDate.toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+            date: latestDate.toLocaleDateString('en-KE'),
+            server: latestSale.server,
+            buyer: latestSale.buyer,
+            items: latestSale.items || [],
+            total: latestSale.total,
+          });
+        }
       } catch (error) {
         if (cancelled) {
           return;
@@ -759,6 +775,48 @@ function App() {
     } finally {
       setIsAuthLoading(false);
     }
+  }
+
+  async function deleteProduct(productId) {
+    try {
+      const response = await fetch(`${API_BASE}/products/${productId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Unable to delete product.');
+      }
+
+      setProducts((current) => current.filter((item) => item.id !== productId));
+      setMessage(`Deleted ${data.message || 'product'}.`);
+      showToast('Product removed from stock.', 'success');
+    } catch (error) {
+      setMessage(error.message || 'Unable to delete product.');
+    } finally {
+      setPendingDelete(null);
+    }
+  }
+
+  function handleDeleteClick(productId) {
+    const product = products.find((item) => item.id === productId);
+    if (product) {
+      setPendingDelete(product);
+    }
+  }
+
+  function confirmDelete() {
+    if (pendingDelete) {
+      deleteProduct(pendingDelete.id);
+    }
+  }
+
+  function cancelDelete() {
+    setPendingDelete(null);
   }
 
   async function handleRequestReset(event) {
@@ -1645,7 +1703,7 @@ function App() {
                 <button onClick={() => goToPage('stock-alerts')}><Icon name="bell" /> View alerts</button>
               </div>
             </div>
-            <ProductList products={visibleStockProducts} onSell={addToCart} onRestock={restockProduct} onUpdateStock={updateProductStock} detailed />
+            <ProductList products={visibleStockProducts} onSell={addToCart} onRestock={restockProduct} onUpdateStock={updateProductStock} onDeleteProduct={handleDeleteClick} detailed />
           </section>
         )}
 
@@ -1744,9 +1802,12 @@ function App() {
         {activePage === 'receipt' && (
           <section className="panel receipt-panel">
             <div className="panel-heading">
-              <div>
-                <p>Customer receipt</p>
-                <h2>{storeName} receipt</h2>
+              <div className="receipt-heading-left">
+                <span className="receipt-logo"><Icon name="cart" size={24} /></span>
+                <div>
+                  <p>Customer receipt</p>
+                  <h2>{storeName} receipt</h2>
+                </div>
               </div>
               <button onClick={() => window.print()}><Icon name="print" /> Print receipt</button>
             </div>
@@ -1824,6 +1885,9 @@ function App() {
                   <div className="report-actions">
                     <button onClick={() => setGeneratedReport(null)} className="cancel-edit">
                       <Icon name="close" /> Close
+                    </button>
+                    <button onClick={() => { setGeneratedReport(null); setReportType(''); }}>
+                      <Icon name="chart" /> Create another report
                     </button>
                     <button onClick={downloadReport}>
                       <Icon name="print" /> Save as PDF
@@ -1914,13 +1978,13 @@ function App() {
                 <h2>Sales history</h2>
               </div>
               <div className="history-range">
-                {['day', 'week', 'month'].map((range) => (
+                {['all', 'day', 'week', 'month'].map((range) => (
                   <button
                     key={range}
                     className={historyRange === range ? 'active' : ''}
                     onClick={() => setHistoryRange(range)}
                   >
-                    {range}
+                    {range === 'all' ? 'All time' : range}
                   </button>
                 ))}
               </div>
@@ -1942,7 +2006,7 @@ function App() {
             <div className="history-list">
               {salesHistory.filter((sale) => {
                 const now = Date.now();
-                const rangeMs = historyRange === 'day' ? 24 * 60 * 60 * 1000 : historyRange === 'week' ? 7 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
+                const rangeMs = historyRange === 'all' ? Infinity : historyRange === 'day' ? 24 * 60 * 60 * 1000 : historyRange === 'week' ? 7 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
                 return now - sale.timestamp <= rangeMs;
               }).slice(0, 8).map((sale) => (
                 <div className="history-row" key={sale.ticket}>
@@ -1959,7 +2023,7 @@ function App() {
               ))}
               {salesHistory.filter((sale) => {
                 const now = Date.now();
-                const rangeMs = historyRange === 'day' ? 24 * 60 * 60 * 1000 : historyRange === 'week' ? 7 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
+                const rangeMs = historyRange === 'all' ? Infinity : historyRange === 'day' ? 24 * 60 * 60 * 1000 : historyRange === 'week' ? 7 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
                 return now - sale.timestamp <= rangeMs;
               }).length === 0 && (
                 <EmptyState
@@ -2028,8 +2092,24 @@ function App() {
         )}
       </section>
     </div>
-        </main>
+         </main>
       )}
+
+      {pendingDelete && (
+        <div className="confirm-overlay" role="dialog" aria-modal="true" aria-label="Confirm deletion">
+          <div className="confirm-dialog">
+            <div className="confirm-icon"><Icon name="trash" size={24} /></div>
+            <h3>Remove from stock?</h3>
+            <p>Are you sure you want to delete <strong>{pendingDelete.name}</strong> ({pendingDelete.sku})?</p>
+            <p className="confirm-warning">This action cannot be undone.</p>
+            <div className="confirm-actions">
+              <button type="button" className="confirm-cancel" onClick={cancelDelete}>Cancel</button>
+              <button type="button" className="confirm-delete" onClick={confirmDelete}>Delete product</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
@@ -2083,7 +2163,7 @@ function Cart({ cart, cartTotal, onQuantity, onCheckout }) {
   );
 }
 
-function ProductList({ products, onSell, onRestock, onUpdateStock, detailed = false }) {
+function ProductList({ products, onSell, onRestock, onUpdateStock, onDeleteProduct, detailed = false }) {
   if (!products.length) {
     return (
       <div className="all-clear stock-empty-state">
@@ -2119,6 +2199,17 @@ function ProductList({ products, onSell, onRestock, onUpdateStock, detailed = fa
             <div className="row-actions">
               <button onClick={() => onSell(product)}><Icon name="cart" size={16} /> Sell</button>
               <button onClick={() => onRestock(product.id, 1)}><Icon name="plus" size={16} /> +1</button>
+              {typeof onDeleteProduct === 'function' && (
+                <button
+                  type="button"
+                  className="delete-product-button"
+                  onClick={() => onDeleteProduct(product.id)}
+                  title={`Remove ${product.name} from stock`}
+                  aria-label={`Delete ${product.name}`}
+                >
+                  <Icon name="trash" size={16} />
+                </button>
+              )}
               {typeof onUpdateStock === 'function' && (
                 <StockEditor product={product} onUpdateStock={onUpdateStock} />
               )}

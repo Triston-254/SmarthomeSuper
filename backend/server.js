@@ -384,6 +384,26 @@ app.put('/api/products/:id', authMiddleware, async (req, res, next) => {
   }
 });
 
+app.delete('/api/products/:id', authMiddleware, async (req, res, next) => {
+  try {
+    const productId = Number(req.params.id);
+    if (!Number.isInteger(productId) || productId <= 0) {
+      return res.status(400).json({ message: 'Invalid product id.' });
+    }
+
+    const current = await getProduct(productId);
+    if (!current) {
+      return res.status(404).json({ message: 'Product not found.' });
+    }
+
+    await getPool().query('DELETE FROM products WHERE id = $1', [productId]);
+
+    return res.json({ message: 'Product deleted successfully.', id: productId });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 app.post('/api/sales', authMiddleware, async (req, res, next) => {
   const connection = await getPool().connect();
 

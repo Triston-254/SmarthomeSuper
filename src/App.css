@@ -1755,13 +1755,25 @@ select:focus {
   max-width: 760px;
 }
 
-.receipt {
+.receipt-heading-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.receipt-logo {
+  width: 42px;
+  height: 42px;
   display: grid;
-  gap: 10px;
-  padding: 18px;
-  border: 1px dashed var(--green);
-  border-radius: 8px;
-  background: var(--mint);
+  place-items: center;
+  border-radius: 10px;
+  color: var(--green-dark);
+  background: #dbffe9;
+}
+
+.receipt-logo .icon {
+  width: 26px;
+  height: 26px;
 }
 
 .receipt-head {
@@ -1769,6 +1781,114 @@ select:focus {
   gap: 3px;
   padding-bottom: 10px;
   border-bottom: 1px solid rgba(24, 138, 77, 0.25);
+}
+
+.delete-product-button {
+  background: rgba(185, 28, 28, 0.12);
+  border: 1px solid rgba(185, 28, 28, 0.3);
+  color: #ef4444;
+  border-radius: 6px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.delete-product-button:hover {
+  background: rgba(185, 28, 28, 0.25);
+  color: #fca5a5;
+}
+
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.confirm-dialog {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 420px;
+  width: min(90vw, 420px);
+  text-align: center;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
+}
+
+.confirm-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 8px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #ef4444;
+  background: rgba(185, 28, 28, 0.12);
+}
+
+.confirm-dialog h3 {
+  margin: 12px 0 8px;
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+.confirm-dialog p {
+  margin: 6px 0;
+  color: var(--muted);
+}
+
+.confirm-warning {
+  color: #ef4444 !important;
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 18px;
+  justify-content: center;
+}
+
+.confirm-cancel {
+  flex: 1;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--muted);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.confirm-cancel:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.confirm-delete {
+  flex: 1;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 0;
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.confirm-delete:hover {
+  background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(185, 28, 28, 0.3);
 }
 
 .receipt p,
