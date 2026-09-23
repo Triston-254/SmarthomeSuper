@@ -1813,20 +1813,25 @@ select:focus {
   padding: 10px 8px;
   color: #ffe7d2;
   font-size: 0.84rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  text-transform: none;
+  letter-spacing: 0;
   background: transparent;
   width: 100%;
   border-radius: 10px;
+  border: 0;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.drawer-section-title:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .drawer-title-content {
   display: inline-flex;
   align-items: center;
-  justify-content: flex-start;
   gap: 10px;
   min-width: 0;
-  width: 100%;
 }
 
 .drawer-title-content span {
@@ -1840,6 +1845,7 @@ select:focus {
   align-items: center;
   line-height: 1;
   font-size: 0.9rem;
+  font-weight: 600;
 }
 
 .drawer-chevron {
@@ -1847,6 +1853,7 @@ select:focus {
   align-items: center;
   justify-content: center;
   transition: transform 0.2s ease;
+  flex: 0 0 auto;
 }
 
 .drawer-chevron.open {

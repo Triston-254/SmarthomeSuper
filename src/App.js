@@ -1331,7 +1331,7 @@ End of Report
           >
             <Icon name={drawerOpen ? 'close' : 'menu'} />
           </button>
-          <div className="brand">
+          <div className="brand" onClick={() => goToPage('dashboard')} title="Go to dashboard" style={{ cursor: 'pointer' }}>
             <span className="brand-icon"><Icon name="cart" /></span>
             <div>
               <strong>{storeName}</strong>
