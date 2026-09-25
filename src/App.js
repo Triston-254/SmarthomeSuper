@@ -927,6 +927,11 @@ function App() {
     setActivePage(pageId);
     setProfileOpen(false);
     setNotificationOpen(false);
+    // Clear generated report when leaving reports page
+    if (activePage === 'reports' && pageId !== 'reports') {
+      setGeneratedReport(null);
+      setReportType('');
+    }
     if (window.innerWidth <= 900) {
       setDrawerOpen(false);
     }
@@ -1902,7 +1907,7 @@ function App() {
                     <small>Generated: {generatedReport.timestamp}</small>
                   </div>
                   <div className="report-actions">
-                    <button onClick={() => setGeneratedReport(null)} className="cancel-edit">
+                    <button onClick={() => { setGeneratedReport(null); setReportType(''); }} className="cancel-edit">
                       <Icon name="close" /> Cancel
                     </button>
                     <button onClick={downloadReport}>
