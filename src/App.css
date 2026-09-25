@@ -1221,6 +1221,9 @@ select:focus {
 }
 
 .cart-row b {
+  text-align: right;
+}
+
 .empty-state {
   min-height: 220px;
   display: flex;
@@ -1262,8 +1265,6 @@ select:focus {
   color: white;
   background: var(--green);
   font-weight: 800;
-}
-  text-align: right;
 }
 
   .report-viewer {
@@ -1592,6 +1593,66 @@ select:focus {
   max-width: 560px;
 }
 
+.report-section {
+  display: grid;
+  gap: 24px;
+}
+
+.report-history {
+  display: grid;
+  gap: 16px;
+}
+
+.report-history h3 {
+  font-size: 1.1rem;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.report-history-list {
+  display: grid;
+  gap: 12px;
+}
+
+.report-history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #fffaf5 0%, #fff1e6 100%);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.08);
+}
+
+.report-history-item > div {
+  display: grid;
+  gap: 4px;
+}
+
+.report-history-item strong {
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.report-history-item small {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.report-history-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.report-history-actions button {
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
 .report-options label {
   display: grid;
   gap: 8px;
@@ -1755,6 +1816,11 @@ select:focus {
   max-width: 760px;
 }
 
+.receipts-list {
+  display: grid;
+  gap: 20px;
+}
+
 .receipt-heading-left {
   display: flex;
   align-items: center;
@@ -1901,6 +1967,19 @@ select:focus {
 .receipt h3 {
   padding-top: 12px;
   border-top: 1px solid rgba(24, 138, 77, 0.25);
+}
+
+.receipt button {
+  margin-top: 12px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border-radius: 8px;
+  color: white;
+  background: var(--green);
+  font-weight: 800;
 }
 
 .profile-card {

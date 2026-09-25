@@ -196,6 +196,14 @@ function App() {
   });
   const [reportType, setReportType] = useState('');
   const [generatedReport, setGeneratedReport] = useState(null);
+  const [reportHistory, setReportHistory] = useState(() => {
+    try {
+      const saved = window.localStorage.getItem('smarthome-report-history');
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      return [];
+    }
+  });
 
   useEffect(() => {
     if (user?.name) {
@@ -273,6 +281,14 @@ function App() {
   useEffect(() => {
     document.title = receipt ? `${storeName} Receipt ${receipt.ticket}` : `${storeName} Dashboard`;
   }, [receipt]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('smarthome-report-history', JSON.stringify(reportHistory));
+    } catch (error) {
+      // Ignore localStorage errors
+    }
+  }, [reportHistory]);
 
   useEffect(() => {
     try {
@@ -935,6 +951,7 @@ function App() {
   function generateReport(type) {
     const timestamp = new Date().toLocaleString();
     const reportData = {
+      id: Date.now(),
       storeName,
       title: type === 'stock' ? 'Stock Report' : 'Sales Report',
       timestamp,
@@ -942,10 +959,11 @@ function App() {
       data: type === 'stock' ? products : salesHistory
     };
     setGeneratedReport(reportData);
+    setReportHistory((current) => [reportData, ...current]);
   }
 
-  function downloadReport() {
-    if (!generatedReport) return;
+  function downloadReport(reportToDownload = generatedReport) {
+    if (!reportToDownload) return;
     const pdf = new jsPDF();
     const margin = 18;
     const pageWidth = pdf.internal.pageSize.getWidth();
@@ -957,19 +975,19 @@ function App() {
     pdf.setTextColor(43, 29, 19);
     pdf.setFontSize(20);
     pdf.setFont('helvetica', 'bold');
-    pdf.text(generatedReport.storeName, margin, y);
+    pdf.text(reportToDownload.storeName, margin, y);
     y += 9;
     pdf.setFontSize(14);
     pdf.setFont('helvetica', 'normal');
-    pdf.text(generatedReport.title, margin, y);
+    pdf.text(reportToDownload.title, margin, y);
     y += 7;
     pdf.setFontSize(9);
     pdf.setTextColor(124, 90, 67);
-    pdf.text(`Generated ${generatedReport.timestamp}`, margin, y);
+    pdf.text(`Generated ${reportToDownload.timestamp}`, margin, y);
     y += 14;
 
-    const rows = generatedReport.type === 'stock'
-      ? generatedReport.data.map((product) => [
+    const rows = reportToDownload.type === 'stock'
+      ? reportToDownload.data.map((product) => [
         product.name,
         product.sku,
         product.category,
@@ -977,7 +995,7 @@ function App() {
         `${product.stock}/${product.capacity}`,
         getStockState(product).label,
       ])
-      : generatedReport.data.map((sale) => [
+      : reportToDownload.data.map((sale) => [
         `Sale #${sale.id}`,
         sale.date || sale.dateLabel || 'Date unavailable',
         sale.server || 'Unknown server',
@@ -1002,7 +1020,7 @@ function App() {
       pdf.setFontSize(10);
       pdf.text('Complete an inventory update or sale to populate this report.', margin, y + 8);
     } else {
-      const headers = generatedReport.type === 'stock'
+      const headers = reportToDownload.type === 'stock'
         ? ['Product', 'SKU', 'Category', 'Price', 'Stock', 'Status']
         : ['Reference', 'Date', 'Server', 'Items', 'Total'];
       const columnWidth = (pageWidth - margin * 2) / headers.length;
@@ -1034,7 +1052,7 @@ function App() {
     pdf.setFontSize(8);
     pdf.setTextColor(124, 90, 67);
     pdf.text('Smarthome Supermarket', margin, pageHeight - 10);
-    pdf.save(`${generatedReport.storeName.replace(/\s+/g, '_')}_${generatedReport.type}_report.pdf`);
+    pdf.save(`${reportToDownload.storeName.replace(/\s+/g, '_')}_${reportToDownload.type}_report.pdf`);
   }
 
   if (!user) {
@@ -1815,39 +1833,45 @@ function App() {
               <div className="receipt-heading-left">
                 <span className="receipt-logo"><Icon name="cart" size={24} /></span>
                 <div>
-                  <p>Customer receipt</p>
-                  <h2>{storeName} receipt</h2>
+                  <p>Customer receipts</p>
+                  <h2>{storeName} receipt history</h2>
                 </div>
               </div>
-              <button onClick={() => window.print()}><Icon name="print" /> Print receipt</button>
             </div>
-            {receipt ? (
-              <div className="receipt">
-                <div className="receipt-head">
-                  <strong>{storeName}</strong>
-                  <small>Welcome, thank you for shopping with us.</small>
-                  <small>Location: {receipt.location}</small>
-                  <small>Ticket: {receipt.ticket}</small>
-                  <small>Date: {receipt.date} | Served at: {receipt.servedAt}</small>
-                  <small>Server: {receipt.server}</small>
-                  <small>Buyer: {receipt.buyer}</small>
-                </div>
-                {receipt.items.map((item) => (
-                  <p key={item.id}>
-                    <span>{item.quantity} x {item.name}</span>
-                    <b>{formatMoney(item.quantity * item.price)}</b>
-                  </p>
-                ))}
-                <h3>
-                  <span>Total paid</span>
-                  <strong>{formatMoney(receipt.total)}</strong>
-                </h3>
+            {salesHistory.length > 0 ? (
+              <div className="receipts-list">
+                {salesHistory.map((sale) => {
+                  const saleDate = new Date(sale.timestamp);
+                  return (
+                    <div key={sale.ticket} className="receipt">
+                      <div className="receipt-head">
+                        <strong>{storeName}</strong>
+                        <small>Welcome, thank you for shopping with us.</small>
+                        <small>Ticket: {sale.ticket}</small>
+                        <small>Date: {saleDate.toLocaleDateString('en-KE')} | Served at: {saleDate.toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</small>
+                        <small>Server: {sale.server}</small>
+                        <small>Buyer: {sale.buyer}</small>
+                      </div>
+                      {sale.items && sale.items.map((item) => (
+                        <p key={item.id}>
+                          <span>{item.quantity} x {item.name}</span>
+                          <b>{formatMoney(item.quantity * item.price)}</b>
+                        </p>
+                      ))}
+                      <h3>
+                        <span>Total paid</span>
+                        <strong>{formatMoney(sale.total)}</strong>
+                      </h3>
+                      <button onClick={() => window.print()}><Icon name="print" /> Print receipt</button>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <EmptyState
                 icon="receipt"
-                title="No receipt yet"
-                message="Complete a sale and your customer receipt will appear here, ready to print."
+                title="No receipts yet"
+                message="Complete a sale and your customer receipts will appear here, ready to print."
                 action="Start selling"
                 onAction={() => goToPage('sell')}
               />
@@ -1865,24 +1889,50 @@ function App() {
             </div>
             
             {!generatedReport ? (
-              <div className="report-generator">
-                <div className="report-options">
-                  <label>
-                    <span className="label-icon"><Icon name="chart" /> Report Type</span>
-                    <select value={reportType} onChange={(event) => setReportType(event.target.value)}>
-                      <option value="">Select report type...</option>
-                      <option value="stock">Stocked Goods Report</option>
-                      <option value="sold">Sold Goods Report</option>
-                    </select>
-                  </label>
+              <div className="report-section">
+                <div className="report-generator">
+                  <div className="report-options">
+                    <label>
+                      <span className="label-icon"><Icon name="chart" /> Report Type</span>
+                      <select value={reportType} onChange={(event) => setReportType(event.target.value)}>
+                        <option value="">Select report type...</option>
+                        <option value="stock">Stocked Goods Report</option>
+                        <option value="sold">Sold Goods Report</option>
+                      </select>
+                    </label>
+                  </div>
+                  <button 
+                    className="generate-report-btn"
+                    onClick={() => reportType && generateReport(reportType)}
+                    disabled={!reportType}
+                  >
+                    <Icon name="receipt" /> Generate Report
+                  </button>
                 </div>
-                <button 
-                  className="generate-report-btn"
-                  onClick={() => reportType && generateReport(reportType)}
-                  disabled={!reportType}
-                >
-                  <Icon name="receipt" /> Generate Report
-                </button>
+                
+                {reportHistory.length > 0 && (
+                  <div className="report-history">
+                    <h3>Report History</h3>
+                    <div className="report-history-list">
+                      {reportHistory.map((report) => (
+                        <div key={report.id} className="report-history-item">
+                          <div>
+                            <strong>{report.title}</strong>
+                            <small>{report.timestamp}</small>
+                          </div>
+                          <div className="report-history-actions">
+                            <button onClick={() => setGeneratedReport(report)}>
+                              <Icon name="eye" size={16} /> View
+                            </button>
+                            <button onClick={() => { setGeneratedReport(report); downloadReport(); }}>
+                              <Icon name="print" size={16} /> Download
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="report-viewer">
@@ -1934,7 +1984,7 @@ function App() {
                             </div>
                             <div>
                               <small>Status</small>
-                              <strong className={`stock-status-${state.level}`}>{state.label}</strong>
+                              <strong className={`stock-status-${state.className}`}>{state.label}</strong>
                             </div>
                           </div>
                         );

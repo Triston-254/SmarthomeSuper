@@ -1,15 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <rect width="32" height="32" rx="6" fill="#147a45"/>
+  <!-- Shopping cart body -->
   <rect x="3" y="9" width="26" height="16" rx="3" fill="#ffffff"/>
   <rect x="3" y="9" width="26" height="5" rx="2" fill="#e8f5ec"/>
   <rect x="3" y="20" width="26" height="2" rx="1" fill="#cde8d8"/>
-  <rect x="6" y="14" width="4" height="8" rx="1.5" fill="#147a45"/>
-  <rect x="12" y="14" width="4" height="8" rx="1.5" fill="#147a45"/>
-  <rect x="18" y="14" width="4" height="8" rx="1.5" fill="#147a45"/>
-  <rect x="6" y="22" width="12" height="2" rx="1" fill="#147a45"/>
+  <!-- Green S on cart -->
+  <text x="16" y="17" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#147a45" text-anchor="middle">S</text>
+  <!-- Apple -->
+  <circle cx="7" cy="13" r="2" fill="#dc2626"/>
+  <!-- Banana -->
+  <path d="M11 12 Q13 10 15 12 Q13 14 11 12" fill="#fbbf24"/>
+  <!-- Milk carton -->
+  <rect x="17" y="11" width="4" height="4" rx="0.5" fill="#3b82f6"/>
+  <!-- Carrot -->
+  <rect x="23" y="12" width="2" height="4" rx="0.5" fill="#f97316"/>
+  <!-- Cart wheels -->
   <circle cx="9" cy="27" r="2.2" fill="#ffffff"/>
   <circle cx="23" cy="27" r="2.2" fill="#ffffff"/>
   <circle cx="9" cy="27" r="1.1" fill="#147a45"/>
   <circle cx="23" cy="27" r="1.1" fill="#147a45"/>
+  <!-- Cart handle -->
   <path d="M26 11 L28 7 L24 7" stroke="#ffffff" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
