@@ -1888,27 +1888,27 @@ function App() {
               </button>
             </div>
             
-            {!generatedReport ? (
-              <div className="report-generator">
-                <div className="report-options">
-                  <label>
-                    <span className="label-icon"><Icon name="chart" /> Report Type</span>
-                    <select value={reportType} onChange={(event) => setReportType(event.target.value)}>
-                      <option value="">Select report type...</option>
-                      <option value="stock">Stocked Goods Report</option>
-                      <option value="sold">Sold Goods Report</option>
-                    </select>
-                  </label>
-                </div>
-                <button 
-                  className="generate-report-btn"
-                  onClick={() => reportType && generateReport(reportType)}
-                  disabled={!reportType}
-                >
-                  <Icon name="receipt" /> Generate Report
-                </button>
+            <div className="report-generator">
+              <div className="report-options">
+                <label>
+                  <span className="label-icon"><Icon name="chart" /> Report Type</span>
+                  <select value={reportType} onChange={(event) => setReportType(event.target.value)}>
+                    <option value="">Select report type...</option>
+                    <option value="stock">Stocked Goods Report</option>
+                    <option value="sold">Sold Goods Report</option>
+                  </select>
+                </label>
               </div>
-            ) : (
+              <button 
+                className="generate-report-btn"
+                onClick={() => reportType && generateReport(reportType)}
+                disabled={!reportType}
+              >
+                <Icon name="receipt" /> Generate Report
+              </button>
+            </div>
+
+            {generatedReport && (
               <div className="report-viewer">
                 <div className="report-header">
                   <div>
