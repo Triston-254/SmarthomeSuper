@@ -12,3 +12,13 @@ test('offers login and signup before opening the dashboard', () => {
   expect(screen.getByLabelText(/full name/i)).toBeInTheDocument();
   expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument();
 });
+
+test('shows the status message in a dismissible alert box', () => {
+  render(<App />);
+
+  expect(screen.getByText(/ready for the next customer\./i)).toBeInTheDocument();
+  const closeButton = screen.getByRole('button', { name: /close message/i });
+
+  fireEvent.click(closeButton);
+  expect(screen.queryByText(/ready for the next customer\./i)).not.toBeInTheDocument();
+});

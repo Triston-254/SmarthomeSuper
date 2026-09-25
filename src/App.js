@@ -158,6 +158,7 @@ function App() {
   const [scanCode, setScanCode] = useState('');
   const [saleDetails, setSaleDetails] = useState({ buyer: '', server: '' });
   const [message, setMessage] = useState('Ready for the next customer.');
+  const [showMessage, setShowMessage] = useState(true);
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(null);
   const [receipt, setReceipt] = useState(null);
@@ -1549,17 +1550,31 @@ function App() {
         </button>
 
         <section className="workspace">
-          <section className="status-strip">
-            <div className="status-left">
-              <div className="stock-key">
-                <span><i className="low-dot"></i> Low</span>
-                <span><i className="average-dot"></i> Average</span>
-                <span><i className="high-dot"></i> High</span>
+          {showMessage && (
+            <section className="status-strip" aria-live="polite">
+              <div className="status-left">
+                <div className="stock-key">
+                  <span><i className="low-dot"></i> Low</span>
+                  <span><i className="average-dot"></i> Average</span>
+                  <span><i className="high-dot"></i> High</span>
+                </div>
+                <span className="status-welcome">Welcome, {user?.name || 'User'}</span>
               </div>
-              <span className="status-welcome">Welcome, {user?.name || 'User'}</span>
-            </div>
-            <strong>{message}</strong>
-          </section>
+
+              <div className="status-message-box">
+                <strong>{message}</strong>
+                <button
+                  type="button"
+                  className="status-close"
+                  onClick={() => setShowMessage(false)}
+                  aria-label="Close message"
+                  title="Close message"
+                >
+                  <Icon name="close" size={14} />
+                </button>
+              </div>
+            </section>
+          )}
 
           {activePage === 'dashboard' && (
           <>
