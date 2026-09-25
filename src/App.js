@@ -1853,13 +1853,15 @@ function App() {
                 })}
               </div>
             ) : (
-              <EmptyState
-                icon="receipt"
-                title="No receipts yet"
-                message="Complete a sale and your customer receipts will appear here, ready to print."
-                action="Start selling"
-                onAction={() => goToPage('sell')}
-              />
+              <div className="receipts-empty">
+                <EmptyState
+                  icon="receipt"
+                  title="No receipts yet"
+                  message="Complete a sale and your customer receipts will appear here, ready to print."
+                  action="Start selling"
+                  onAction={() => goToPage('sell')}
+                />
+              </div>
             )}
           </section>
         )}

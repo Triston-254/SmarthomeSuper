@@ -1825,6 +1825,10 @@ select:focus {
   gap: 20px;
 }
 
+.receipts-empty {
+  padding: 28px 20px;
+}
+
 .receipt-heading-left {
   display: flex;
   align-items: center;
