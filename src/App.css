@@ -1289,9 +1289,7 @@ select:focus {
   .report-row {
     break-inside: avoid;
   }
-  .report-generator,
-  .sales-panel,
-  .receipt-panel:not(:has(.receipt)) {
+  .report-generator {
     display: none;
   }
 .checkout-row {
