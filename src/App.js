@@ -1910,7 +1910,7 @@ function App() {
                   </button>
                 </div>
                 
-                {reportHistory.length > 0 && (
+                {reportHistory.length > 0 ? (
                   <div className="report-history">
                     <h3>Report History</h3>
                     <div className="report-history-list">
@@ -1931,6 +1931,16 @@ function App() {
                         </div>
                       ))}
                     </div>
+                  </div>
+                ) : (
+                  <div className="report-history-empty">
+                    <EmptyState
+                      icon="chart"
+                      title="No reports generated yet"
+                      message="Generate your first report to see it here. Reports will be saved and available for future reference."
+                      action="Generate report"
+                      onAction={() => reportType && generateReport(reportType)}
+                    />
                   </div>
                 )}
               </div>

@@ -1641,6 +1641,10 @@ select:focus {
   color: var(--muted);
 }
 
+.report-history-empty {
+  padding: 28px 20px;
+}
+
 .report-history-actions {
   display: flex;
   gap: 8px;
