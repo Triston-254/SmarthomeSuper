@@ -196,7 +196,6 @@ function App() {
   });
   const [reportType, setReportType] = useState('');
   const [generatedReport, setGeneratedReport] = useState(null);
-  const [reportHistory, setReportHistory] = useState([]);
 
   useEffect(() => {
     if (user?.name) {
@@ -944,11 +943,10 @@ function App() {
       data: type === 'stock' ? products : salesHistory
     };
     setGeneratedReport(reportData);
-    setReportHistory((current) => [reportData, ...current]);
   }
 
-  function downloadReport(reportToDownload = generatedReport) {
-    if (!reportToDownload) return;
+  function downloadReport() {
+    if (!generatedReport) return;
     const pdf = new jsPDF();
     const margin = 18;
     const pageWidth = pdf.internal.pageSize.getWidth();
@@ -960,19 +958,19 @@ function App() {
     pdf.setTextColor(43, 29, 19);
     pdf.setFontSize(20);
     pdf.setFont('helvetica', 'bold');
-    pdf.text(reportToDownload.storeName, margin, y);
+    pdf.text(generatedReport.storeName, margin, y);
     y += 9;
     pdf.setFontSize(14);
     pdf.setFont('helvetica', 'normal');
-    pdf.text(reportToDownload.title, margin, y);
+    pdf.text(generatedReport.title, margin, y);
     y += 7;
     pdf.setFontSize(9);
     pdf.setTextColor(124, 90, 67);
-    pdf.text(`Generated ${reportToDownload.timestamp}`, margin, y);
+    pdf.text(`Generated ${generatedReport.timestamp}`, margin, y);
     y += 14;
 
-    const rows = reportToDownload.type === 'stock'
-      ? reportToDownload.data.map((product) => [
+    const rows = generatedReport.type === 'stock'
+      ? generatedReport.data.map((product) => [
         product.name,
         product.sku,
         product.category,
@@ -980,7 +978,7 @@ function App() {
         `${product.stock}/${product.capacity}`,
         getStockState(product).label,
       ])
-      : reportToDownload.data.map((sale) => [
+      : generatedReport.data.map((sale) => [
         `Sale #${sale.id}`,
         sale.date || sale.dateLabel || 'Date unavailable',
         sale.server || 'Unknown server',
@@ -1005,7 +1003,7 @@ function App() {
       pdf.setFontSize(10);
       pdf.text('Complete an inventory update or sale to populate this report.', margin, y + 8);
     } else {
-      const headers = reportToDownload.type === 'stock'
+      const headers = generatedReport.type === 'stock'
         ? ['Product', 'SKU', 'Category', 'Price', 'Stock', 'Status']
         : ['Reference', 'Date', 'Server', 'Items', 'Total'];
       const columnWidth = (pageWidth - margin * 2) / headers.length;
@@ -1037,7 +1035,7 @@ function App() {
     pdf.setFontSize(8);
     pdf.setTextColor(124, 90, 67);
     pdf.text('Smarthome Supermarket', margin, pageHeight - 10);
-    pdf.save(`${reportToDownload.storeName.replace(/\s+/g, '_')}_${reportToDownload.type}_report.pdf`);
+    pdf.save(`${generatedReport.storeName.replace(/\s+/g, '_')}_${generatedReport.type}_report.pdf`);
   }
 
   if (!user) {
@@ -1876,60 +1874,24 @@ function App() {
             </div>
             
             {!generatedReport ? (
-              <div className="report-section">
-                <div className="report-generator">
-                  <div className="report-options">
-                    <label>
-                      <span className="label-icon"><Icon name="chart" /> Report Type</span>
-                      <select value={reportType} onChange={(event) => setReportType(event.target.value)}>
-                        <option value="">Select report type...</option>
-                        <option value="stock">Stocked Goods Report</option>
-                        <option value="sold">Sold Goods Report</option>
-                      </select>
-                    </label>
-                  </div>
-                  <button 
-                    className="generate-report-btn"
-                    onClick={() => reportType && generateReport(reportType)}
-                    disabled={!reportType}
-                  >
-                    <Icon name="receipt" /> Generate Report
-                  </button>
+              <div className="report-generator">
+                <div className="report-options">
+                  <label>
+                    <span className="label-icon"><Icon name="chart" /> Report Type</span>
+                    <select value={reportType} onChange={(event) => setReportType(event.target.value)}>
+                      <option value="">Select report type...</option>
+                      <option value="stock">Stocked Goods Report</option>
+                      <option value="sold">Sold Goods Report</option>
+                    </select>
+                  </label>
                 </div>
-                
-                {reportHistory.length > 0 ? (
-                  <div className="report-history">
-                    <h3>Report History</h3>
-                    <div className="report-history-list">
-                      {reportHistory.map((report) => (
-                        <div key={report.id} className="report-history-item">
-                          <div>
-                            <strong>{report.title}</strong>
-                            <small>{report.timestamp}</small>
-                          </div>
-                          <div className="report-history-actions">
-                            <button onClick={() => setGeneratedReport(report)}>
-                              <Icon name="eye" size={16} /> View
-                            </button>
-                            <button onClick={() => { setGeneratedReport(report); downloadReport(); }}>
-                              <Icon name="print" size={16} /> Download
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="report-history-empty">
-                    <EmptyState
-                      icon="chart"
-                      title="No reports generated yet"
-                      message="Generate your first report to see it here. You can switch between reports and download them as needed."
-                      action="Generate report"
-                      onAction={() => reportType && generateReport(reportType)}
-                    />
-                  </div>
-                )}
+                <button 
+                  className="generate-report-btn"
+                  onClick={() => reportType && generateReport(reportType)}
+                  disabled={!reportType}
+                >
+                  <Icon name="receipt" /> Generate Report
+                </button>
               </div>
             ) : (
               <div className="report-viewer">
@@ -1941,13 +1903,10 @@ function App() {
                   </div>
                   <div className="report-actions">
                     <button onClick={() => setGeneratedReport(null)} className="cancel-edit">
-                      <Icon name="close" /> Close
-                    </button>
-                    <button onClick={() => { setGeneratedReport(null); setReportType(''); }}>
-                      <Icon name="chart" /> Create another report
+                      <Icon name="close" /> Cancel
                     </button>
                     <button onClick={downloadReport}>
-                      <Icon name="print" /> Save as PDF
+                      <Icon name="print" /> Download PDF
                     </button>
                   </div>
                 </div>
