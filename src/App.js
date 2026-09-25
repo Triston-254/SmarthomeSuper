@@ -1550,17 +1550,17 @@ function App() {
         </button>
 
         <section className="workspace">
-          {showMessage && (
-            <section className="status-strip" aria-live="polite">
-              <div className="status-left">
-                <div className="stock-key">
-                  <span><i className="low-dot"></i> Low</span>
-                  <span><i className="average-dot"></i> Average</span>
-                  <span><i className="high-dot"></i> High</span>
-                </div>
-                <span className="status-welcome">Welcome, {user?.name || 'User'}</span>
+          <section className="status-strip" aria-live="polite" aria-label="Store status">
+            <div className="status-left">
+              <div className="stock-key">
+                <span><i className="low-dot"></i> Low</span>
+                <span><i className="average-dot"></i> Average</span>
+                <span><i className="high-dot"></i> High</span>
               </div>
+              <span className="status-welcome">Welcome, {user?.name || 'User'}</span>
+            </div>
 
+            {showMessage && (
               <div className="status-message-box">
                 <strong>{message}</strong>
                 <button
@@ -1573,8 +1573,8 @@ function App() {
                   <Icon name="close" size={14} />
                 </button>
               </div>
-            </section>
-          )}
+            )}
+          </section>
 
           {activePage === 'dashboard' && (
           <>

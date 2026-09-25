@@ -16,9 +16,13 @@ test('offers login and signup before opening the dashboard', () => {
 test('shows the status message in a dismissible alert box', () => {
   render(<App />);
 
+  const strip = screen.getByRole('region', { name: /store status/i });
+  expect(strip).toBeInTheDocument();
   expect(screen.getByText(/ready for the next customer\./i)).toBeInTheDocument();
-  const closeButton = screen.getByRole('button', { name: /close message/i });
 
+  const closeButton = screen.getByRole('button', { name: /close message/i });
   fireEvent.click(closeButton);
+
   expect(screen.queryByText(/ready for the next customer\./i)).not.toBeInTheDocument();
+  expect(screen.getByRole('region', { name: /store status/i })).toBeInTheDocument();
 });
