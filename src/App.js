@@ -196,14 +196,7 @@ function App() {
   });
   const [reportType, setReportType] = useState('');
   const [generatedReport, setGeneratedReport] = useState(null);
-  const [reportHistory, setReportHistory] = useState(() => {
-    try {
-      const saved = window.localStorage.getItem('smarthome-report-history');
-      return saved ? JSON.parse(saved) : [];
-    } catch (error) {
-      return [];
-    }
-  });
+  const [reportHistory, setReportHistory] = useState([]);
 
   useEffect(() => {
     if (user?.name) {
@@ -281,14 +274,6 @@ function App() {
   useEffect(() => {
     document.title = receipt ? `${storeName} Receipt ${receipt.ticket}` : `${storeName} Dashboard`;
   }, [receipt]);
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem('smarthome-report-history', JSON.stringify(reportHistory));
-    } catch (error) {
-      // Ignore localStorage errors
-    }
-  }, [reportHistory]);
 
   useEffect(() => {
     try {
@@ -1937,7 +1922,7 @@ function App() {
                     <EmptyState
                       icon="chart"
                       title="No reports generated yet"
-                      message="Generate your first report to see it here. Reports will be saved and available for future reference."
+                      message="Generate your first report to see it here. You can switch between reports and download them as needed."
                       action="Generate report"
                       onAction={() => reportType && generateReport(reportType)}
                     />
