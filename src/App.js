@@ -947,7 +947,14 @@ function App() {
       type,
       data: type === 'stock' ? products : salesHistory
     };
-    setGeneratedReport(reportData);
+    // Automatically clear existing report and create new one
+    setGeneratedReport(null);
+    setTimeout(() => setGeneratedReport(reportData), 0);
+  }
+
+  function clearReport() {
+    setGeneratedReport(null);
+    setReportType('');
   }
 
   function downloadReport() {
@@ -1876,6 +1883,9 @@ function App() {
                 <p>Reports</p>
                 <h2>Generate and download reports</h2>
               </div>
+              <button onClick={clearReport} className="cancel-edit">
+                <Icon name="close" /> Clear Report
+              </button>
             </div>
             
             {!generatedReport ? (
@@ -1907,9 +1917,6 @@ function App() {
                     <small>Generated: {generatedReport.timestamp}</small>
                   </div>
                   <div className="report-actions">
-                    <button onClick={() => { setGeneratedReport(null); setReportType(''); }} className="cancel-edit">
-                      <Icon name="close" /> Cancel
-                    </button>
                     <button onClick={downloadReport}>
                       <Icon name="print" /> Download PDF
                     </button>
