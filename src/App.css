@@ -338,7 +338,7 @@ button {
 .workspace {
   padding: 18px 20px 20px;
   display: grid;
-  gap: 12px;
+  gap: 8px;
   min-width: 0;
   height: 100%;
   overflow-y: auto;
@@ -2863,7 +2863,7 @@ select:focus {
 
   .workspace {
     padding: 14px;
-    gap: 12px;
+    gap: 8px;
   }
 
   .topbar {
