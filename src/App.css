@@ -2342,6 +2342,18 @@ select:focus {
 }
 
 @media (max-width: 768px) {
+  .workspace {
+    gap: 4px;
+  }
+
+  .workspace > .panel {
+    padding-top: 8px;
+  }
+
+  .workspace > .panel .panel-heading {
+    margin-bottom: 10px;
+  }
+
   .status-strip {
     flex-direction: row;
     align-items: center;
@@ -3003,6 +3015,21 @@ select:focus {
 
   .heading-actions label {
     min-width: 0;
+  }
+
+  .stock-view-panel .heading-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 8px;
+  }
+
+  .stock-view-panel .heading-actions label {
+    grid-column: 1;
+  }
+
+  .stock-view-panel .heading-actions select {
+    width: 100%;
   }
 
   .metrics,

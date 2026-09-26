@@ -201,7 +201,13 @@ function App() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [stockMenuOpen, setStockMenuOpen] = useState(true);
   const [stockCategory, setStockCategory] = useState('All');
-  const [theme, setTheme] = useState('light');
+  const [theme, setTheme] = useState(() => {
+    try {
+      return window.localStorage.getItem('smarthome-theme') || 'light';
+    } catch (error) {
+      return 'light';
+    }
+  });
   const [font, setFont] = useState('Inter');
   const [historyRange, setHistoryRange] = useState('all');
   const [salesHistory, setSalesHistory] = useState([]);
@@ -330,6 +336,14 @@ function App() {
       // Ignore localStorage errors
     }
   }, [activePage]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('smarthome-theme', theme);
+    } catch (error) {
+      // Ignore localStorage errors
+    }
+  }, [theme]);
 
   useEffect(() => {
     if (!authToken) {
@@ -1970,7 +1984,7 @@ function App() {
         )}
 
         {activePage === 'stock' && (
-          <section className="panel">
+          <section className="panel stock-view-panel">
             <div className="panel-heading">
               <div>
                 <p>Available goods</p>
@@ -1986,7 +2000,6 @@ function App() {
                   </select>
                 </label>
                 <button onClick={() => goToPage('add-stock')}><Icon name="plus" /> Add stock</button>
-                <button onClick={() => goToPage('stock-alerts')}><Icon name="bell" /> View alerts</button>
               </div>
             </div>
             <ProductList products={visibleStockProducts} onSell={addToCart} onRestock={restockProduct} onUpdateStock={updateProductStock} onDeleteProduct={handleDeleteClick} detailed />
