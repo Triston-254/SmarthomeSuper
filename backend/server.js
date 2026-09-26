@@ -540,6 +540,51 @@ app.get('/api/sales', authMiddleware, async (req, res, next) => {
   }
 });
 
+app.delete('/api/sales/:id', authMiddleware, async (req, res, next) => {
+  const saleId = req.params.id;
+  if (!/^\d+$/.test(saleId) || BigInt(saleId) <= 0n || BigInt(saleId) > 9223372036854775807n) {
+    return res.status(400).json({ message: 'Sale ID is invalid.' });
+  }
+
+  let connection;
+  try {
+    connection = await getPool().connect();
+    await connection.query('BEGIN');
+    const { rows: saleRows } = await connection.query(
+      'SELECT id FROM sales WHERE id = $1 FOR UPDATE',
+      [saleId]
+    );
+    if (saleRows.length === 0) {
+      await connection.query('ROLLBACK');
+      return res.status(404).json({ message: 'Sale not found.' });
+    }
+
+    const { rows: items } = await connection.query(
+      'SELECT product_id, quantity FROM sale_items WHERE sale_id = $1',
+      [saleId]
+    );
+    for (const item of items) {
+      if (item.product_id !== null) {
+        await connection.query(
+          'UPDATE products SET stock = stock + $1, updated_at = NOW() WHERE id = $2',
+          [item.quantity, item.product_id]
+        );
+      }
+    }
+
+    await connection.query('DELETE FROM sales WHERE id = $1', [saleId]);
+    await connection.query('COMMIT');
+    return res.json({ message: 'Sale deleted and stock restored.', id: saleId });
+  } catch (error) {
+    if (connection) {
+      await connection.query('ROLLBACK').catch(() => {});
+    }
+    return next(error);
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
 app.use((req, res) => {
   if (!IS_VERCEL && req.method === 'GET' && !req.path.startsWith('/api')) {
     return res.sendFile(path.join(__dirname, '..', 'build', 'index.html'));

@@ -42,6 +42,7 @@ const iconPaths = {
   boxes: ['M4 7l8-4 8 4-8 4z', 'M4 7v10l8 4 8-4V7', 'M12 11v10'],
   plus: ['M12 5v14', 'M5 12h14'],
   receipt: ['M6 3h12v18l-2-1.2-2 1.2-2-1.2-2 1.2-2-1.2L6 21z', 'M9 8h6', 'M9 12h6', 'M9 16h4'],
+  store: ['M3 10h18', 'M5 10v10h14V10', 'M3 10l2-6h14l2 6', 'M9 20v-6h6v6', 'M7 10v2', 'M12 10v2', 'M17 10v2'],
   chart: ['M4 19V5', 'M4 19h16', 'M8 16v-5', 'M12 16V8', 'M16 16v-9'],
   user: ['M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', 'M4 21a8 8 0 0 1 16 0'],
   settings: ['M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z', 'M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2 3.4-.2-.1a1.7 1.7 0 0 0-1.9-.2 7.8 7.8 0 0 1-1.7.7 1.7 1.7 0 0 0-1.2 1.5v.2H11v-.2a1.7 1.7 0 0 0-1.2-1.5 7.8 7.8 0 0 1-1.7-.7 1.7 1.7 0 0 0-1.9.2l-.2.1-2-3.4.1-.1a1.7 1.7 0 0 0 .3-1.9 8.2 8.2 0 0 1-.3-1.9A1.7 1.7 0 0 0 2.8 12h-.2V8h.2a1.7 1.7 0 0 0 1.6-1.1c.1-.7.2-1.3.4-1.9a1.7 1.7 0 0 0-.3-1.9l-.1-.1 2-3.4.2.1a1.7 1.7 0 0 0 1.9.2c.5-.3 1.1-.5 1.7-.7A1.7 1.7 0 0 0 11 .2V0h2v.2a1.7 1.7 0 0 0 1.2 1.5c.6.2 1.2.4 1.7.7a1.7 1.7 0 0 0 1.9-.2l.2-.1 2 3.4-.1.1a1.7 1.7 0 0 0-.3 1.9c.2.6.3 1.2.4 1.9A1.7 1.7 0 0 0 21.2 8h.2v4h-.2a1.7 1.7 0 0 0-1.6 1.1c-.1.7-.2 1.3-.4 1.9z'],
@@ -57,6 +58,7 @@ const iconPaths = {
   'chevron-down': ['M6 9l6 6 6-6'],
   'chevron-up': ['M6 15l6-6 6 6'],
   trash: ['M3 6h18v2H3z', 'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2', 'M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2L18 6'],
+  download: ['M12 3v12', 'M7 10l5 5 5-5', 'M5 20h14'],
   eye: ['M2 12s3-7 10-7 10 7-3 7-10 7-10-7z', 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z'],
   'eye-off': ['M9.9 4.2A9.9 9.9 0 0 1 12 4c7 0 10 8 10 8a18 18 0 0 1-2.6 3.6', 'M6.6 6.6A18 18 0 0 0 2 12s3 7 10 7a9.9 9.9 0 0 0 5.4-1.6', 'M3 3l18 18'],
   mail: ['M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z', 'M22 6 12 13 2 6'],
@@ -88,6 +90,19 @@ function normalizeSale(sale) {
     timestamp,
     dateLabel: `${date.toLocaleDateString('en-KE')} · ${date.toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`,
   };
+}
+
+function getSalesReportRows(sales) {
+  return sales.flatMap((sale) => (sale.items || []).map((item) => ({
+    ticket: sale.ticket,
+    date: sale.date || sale.dateLabel || new Date(sale.timestamp).toLocaleString(),
+    server: sale.server || 'Unknown server',
+    name: item.name || 'Unnamed item',
+    sku: item.sku || '',
+    quantity: Number(item.quantity) || 0,
+    price: Number(item.price) || 0,
+    subtotal: Number(item.subtotal) || (Number(item.price) || 0) * (Number(item.quantity) || 0),
+  }))).map((row, index) => ({ ...row, number: index + 1 }));
 }
 
 function getStockState(product) {
@@ -834,11 +849,13 @@ function App() {
 
       setSalesHistory((current) => current.filter((sale) => sale.id !== saleId));
       setSelectedSales((current) => current.filter((id) => id !== saleId));
+      setSelectedReceipts((current) => current.filter((id) => id !== saleId));
       showToast('Sale deleted successfully.', 'success');
     } catch (error) {
       showToast(error.message || 'Unable to delete sale.', 'error');
     } finally {
       setPendingSaleDelete(null);
+      setPendingReceiptDelete(null);
     }
   }
 
@@ -863,6 +880,7 @@ function App() {
 
       setSalesHistory((current) => current.filter((sale) => !saleIds.includes(sale.id)));
       setSelectedSales([]);
+      setSelectedReceipts((current) => current.filter((id) => !saleIds.includes(id)));
       showToast(`${saleIds.length} sale(s) deleted successfully.`, 'success');
     } catch (error) {
       showToast(error.message || 'Unable to delete sales.', 'error');
@@ -1082,7 +1100,8 @@ function App() {
 
   function downloadReport() {
     if (!generatedReport) return;
-    const pdf = new jsPDF();
+    const isSalesReport = generatedReport.type === 'sold';
+    const pdf = new jsPDF({ orientation: isSalesReport ? 'landscape' : 'portrait' });
     const margin = 18;
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
@@ -1113,12 +1132,16 @@ function App() {
         `${product.stock}/${product.capacity}`,
         getStockState(product).label,
       ])
-      : generatedReport.data.map((sale) => [
-        `Sale #${sale.id}`,
-        sale.date || sale.dateLabel || 'Date unavailable',
-        sale.server || 'Unknown server',
-        `${sale.items.length} item${sale.items.length === 1 ? '' : 's'}`,
-        formatMoney(sale.total),
+      : getSalesReportRows(generatedReport.data).map((row) => [
+        row.number,
+        row.name,
+        row.sku,
+        row.quantity,
+        formatMoney(row.price),
+        formatMoney(row.subtotal),
+        row.ticket,
+        row.date,
+        row.server,
       ]);
 
     pdf.setFillColor(255, 244, 235);
@@ -1140,13 +1163,20 @@ function App() {
     } else {
       const headers = generatedReport.type === 'stock'
         ? ['Product', 'SKU', 'Category', 'Price', 'Stock', 'Status']
-        : ['Reference', 'Date', 'Server', 'Items', 'Total'];
-      const columnWidth = (pageWidth - margin * 2) / headers.length;
+        : ['No.', 'Item', 'SKU', 'Qty', 'Unit price', 'Subtotal', 'Receipt', 'Date', 'Server'];
+      const columnWeights = isSalesReport ? [0.45, 1.6, 1, 0.5, 0.85, 0.9, 1.05, 1.35, 0.9] : headers.map(() => 1);
+      const availableWidth = pageWidth - margin * 2;
+      const totalWeight = columnWeights.reduce((sum, weight) => sum + weight, 0);
+      const columnWidths = columnWeights.map((weight) => (availableWidth * weight) / totalWeight);
       pdf.setFillColor(249, 115, 22);
-      pdf.rect(margin, y - 6, pageWidth - margin * 2, 9, 'F');
+      pdf.rect(margin, y - 6, availableWidth, 9, 'F');
       pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(8);
-      headers.forEach((header, index) => pdf.text(header, margin + index * columnWidth + 2, y));
+      pdf.setFontSize(isSalesReport ? 7 : 8);
+      let columnX = margin;
+      headers.forEach((header, index) => {
+        pdf.text(header, columnX + 2, y);
+        columnX += columnWidths[index];
+      });
       y += 9;
       rows.forEach((row, rowIndex) => {
         if (y > pageHeight - 18) {
@@ -1155,13 +1185,16 @@ function App() {
         }
         if (rowIndex % 2 === 0) {
           pdf.setFillColor(255, 250, 245);
-          pdf.rect(margin, y - 6, pageWidth - margin * 2, 10, 'F');
+          pdf.rect(margin, y - 6, availableWidth, 10, 'F');
         }
         pdf.setTextColor(43, 29, 19);
         pdf.setFontSize(7.5);
+        columnX = margin;
         row.forEach((value, index) => {
-          const text = String(value).slice(0, index === 0 ? 24 : 18);
-          pdf.text(text, margin + index * columnWidth + 2, y);
+          const maxWidth = columnWidths[index] - 4;
+          const text = pdf.splitTextToSize(String(value), maxWidth)[0] || '';
+          pdf.text(text, columnX + 2, y);
+          columnX += columnWidths[index];
         });
         y += 10;
       });
@@ -1171,6 +1204,47 @@ function App() {
     pdf.setTextColor(124, 90, 67);
     pdf.text('Smarthome Supermarket', margin, pageHeight - 10);
     pdf.save(`${generatedReport.storeName.replace(/\s+/g, '_')}_${generatedReport.type}_report.pdf`);
+  }
+
+  function downloadReportCsv() {
+    if (!generatedReport) return;
+    const rows = generatedReport.type === 'stock'
+      ? [
+        ['No.', 'Item', 'SKU', 'Category', 'Unit price', 'Stock', 'Capacity', 'Status'],
+        ...generatedReport.data.map((product, index) => [
+          index + 1,
+          product.name,
+          product.sku,
+          product.category,
+          product.price,
+          product.stock,
+          product.capacity,
+          getStockState(product).label,
+        ]),
+      ]
+      : [
+        ['No.', 'Item', 'SKU', 'Quantity', 'Unit price', 'Subtotal', 'Receipt', 'Date', 'Server'],
+        ...getSalesReportRows(generatedReport.data).map((row) => [
+          row.number,
+          row.name,
+          row.sku,
+          row.quantity,
+          row.price,
+          row.subtotal,
+          row.ticket,
+          row.date,
+          row.server,
+        ]),
+      ];
+    const csv = rows.map((row) => row.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${generatedReport.storeName.replace(/\s+/g, '_')}_${generatedReport.type}_report.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 
   if (!user) {
@@ -1517,7 +1591,8 @@ function App() {
           >
             <Icon name={drawerOpen ? 'close' : 'menu'} />
           </button>
-          <div>
+          <div className="topbar-brand">
+            <img src={`${process.env.PUBLIC_URL}/favico.ico/fav.png`} alt="" className="topbar-brand-logo" />
             <h1>{storeName}</h1>
           </div>
         </div>
@@ -1595,7 +1670,7 @@ function App() {
           </button>
           <div className="brand" onClick={() => goToPage('dashboard')} title="Go to dashboard" style={{ cursor: 'pointer' }}>
             <span className="brand-icon">
-              <img src="/favico.ico/fav.png" alt="Store Logo" className="brand-logo-img" />
+              <Icon name="store" size={24} />
             </span>
             <div>
               <strong>{storeName}</strong>
@@ -1993,11 +2068,13 @@ function App() {
                           className="receipt-checkbox"
                         />
                         <button
+                          type="button"
                           onClick={() => handleReceiptDeleteClick(sale.id)}
                           className="delete-receipt-button"
                           title="Delete receipt"
+                          aria-label={`Delete receipt ${sale.ticket}`}
                         >
-                          <Icon name="trash" size={16} />
+                          <Icon name="trash" size={16} /> <span>Delete</span>
                         </button>
                       </div>
                       <div className="receipt-head">
@@ -2078,8 +2155,11 @@ function App() {
                     <small>Generated: {generatedReport.timestamp}</small>
                   </div>
                   <div className="report-actions">
-                    <button onClick={downloadReport}>
+                    <button type="button" onClick={downloadReport}>
                       <Icon name="print" /> Download PDF
+                    </button>
+                    <button type="button" onClick={downloadReportCsv}>
+                      <Icon name="download" /> Export CSV
                     </button>
                   </div>
                 </div>
@@ -2130,26 +2210,38 @@ function App() {
                           onAction={() => goToPage('sell')}
                         />
                       ) : (
-                        generatedReport.data.map((sale) => (
-                          <div key={sale.id} className="report-row">
-                            <div>
-                              <strong>Sale #{sale.id}</strong>
-                              <small>{sale.date}</small>
-                            </div>
-                            <div>
-                              <small>Server</small>
-                              <strong>{sale.server}</strong>
-                            </div>
-                            <div>
-                              <small>Items</small>
-                              <strong>{sale.items.length}</strong>
-                            </div>
-                            <div>
-                              <small>Total</small>
-                              <strong>{formatMoney(sale.total)}</strong>
-                            </div>
-                          </div>
-                        ))
+                        <div className="report-table-scroll">
+                          <table className="report-data-table">
+                            <thead>
+                              <tr>
+                                <th scope="col">No.</th>
+                                <th scope="col">Item</th>
+                                <th scope="col">SKU</th>
+                                <th scope="col">Quantity</th>
+                                <th scope="col">Unit price</th>
+                                <th scope="col">Subtotal</th>
+                                <th scope="col">Receipt</th>
+                                <th scope="col">Date</th>
+                                <th scope="col">Server</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {getSalesReportRows(generatedReport.data).map((row) => (
+                                <tr key={`${row.ticket}-${row.number}`}>
+                                  <td>{row.number}</td>
+                                  <th scope="row">{row.name}</th>
+                                  <td>{row.sku || '—'}</td>
+                                  <td>{row.quantity} {row.quantity === 1 ? 'unit' : 'units'}</td>
+                                  <td>{formatMoney(row.price)}</td>
+                                  <td>{formatMoney(row.subtotal)}</td>
+                                  <td>{row.ticket}</td>
+                                  <td>{row.date}</td>
+                                  <td>{row.server}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
                       )}
                     </div>
                   )}
@@ -2222,9 +2314,11 @@ function App() {
                   </div>
                   <span>{formatMoney(sale.total)}</span>
                   <button
+                    type="button"
                     onClick={() => handleSaleDeleteClick(sale.id)}
                     className="delete-sale-button"
                     title="Delete sale"
+                    aria-label={`Delete sale ${sale.ticket}`}
                   >
                     <Icon name="trash" size={16} />
                   </button>

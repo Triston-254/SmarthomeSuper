@@ -117,6 +117,7 @@ button {
 }
 
 .app.dark .panel-heading p,
+.app.dark .panel-heading h2,
 .app.dark .quick-products small,
 .app.dark .cart-row small,
 .app.dark .inventory-table small,
@@ -143,6 +144,36 @@ button {
 .app.dark .tool-grid button,
 .app.dark .metric-card {
   box-shadow: 0 12px 20px rgba(0,0,0,0.18);
+}
+
+.app.dark .summary-grid article {
+  color: #f1f8f4;
+  background: #163226;
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
+}
+
+.app.dark .summary-grid article p {
+  color: #c7ded3;
+}
+
+.app.dark .summary-grid article strong {
+  color: #f1f8f4;
+}
+
+.app.dark .report-header {
+  background: #163226;
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.app.dark .report-header strong,
+.app.dark .report-content h3 {
+  color: #f1f8f4;
+}
+
+.app.dark .report-header p,
+.app.dark .report-header small {
+  color: #c7ded3;
 }
 
 .app.dark .overview-grid article,
@@ -356,6 +387,22 @@ button {
   gap: 12px;
   text-align: center;
   min-height: 44px;
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.topbar-brand-logo {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: white;
 }
 
 .topbar h1 {
@@ -1799,6 +1846,57 @@ select:focus {
   gap: 8px;
 }
 
+.report-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.report-data-table {
+  width: 100%;
+  min-width: 960px;
+  border-collapse: collapse;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 0.82rem;
+  text-align: left;
+}
+
+.report-data-table th,
+.report-data-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.report-data-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--green-dark);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.report-data-table tbody th {
+  color: var(--ink);
+  font-weight: 750;
+}
+
+.report-data-table tbody tr:last-child th,
+.report-data-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.report-data-table tbody tr:nth-child(even) {
+  background: rgba(249, 115, 22, 0.045);
+}
+
+.report-actions {
+  flex-wrap: wrap;
+}
+
 .report-row {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1885,21 +1983,43 @@ select:focus {
 }
 
 .delete-receipt-button {
-  width: 32px;
+  min-width: 88px;
   height: 32px;
-  display: grid;
-  place-items: center;
-  border-radius: 6px;
-  background: rgba(185, 28, 28, 0.12);
-  border: 1px solid rgba(185, 28, 28, 0.3);
-  color: #ef4444;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  border-radius: 7px;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #be123c;
+  font-size: 0.78rem;
+  font-weight: 800;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
 
 .delete-receipt-button:hover {
-  background: rgba(185, 28, 28, 0.25);
-  color: #fca5a5;
+  background: #ffe4e6;
+  border-color: #fda4af;
+  transform: translateY(-1px);
+}
+
+.delete-receipt-button:focus-visible {
+  outline: 3px solid rgba(225, 29, 72, 0.3);
+  outline-offset: 2px;
+}
+
+.app.dark .delete-receipt-button {
+  color: #fecdd3;
+  background: rgba(190, 18, 60, 0.18);
+  border-color: rgba(251, 113, 133, 0.4);
+}
+
+.app.dark .delete-receipt-button:hover {
+  background: rgba(190, 18, 60, 0.3);
+  border-color: rgba(251, 113, 133, 0.65);
 }
 
 .receipt.selected {
@@ -2059,7 +2179,7 @@ select:focus {
   border-top: 1px solid rgba(24, 138, 77, 0.25);
 }
 
-.receipt button {
+.receipt button:not(.delete-receipt-button) {
   margin-top: 12px;
   min-height: 36px;
   display: inline-flex;
