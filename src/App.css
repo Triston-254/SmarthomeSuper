@@ -3019,17 +3019,23 @@ select:focus {
 
   .stock-view-panel .heading-actions {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: end;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
     gap: 8px;
   }
 
   .stock-view-panel .heading-actions label {
     grid-column: 1;
+    width: 100%;
   }
 
   .stock-view-panel .heading-actions select {
     width: 100%;
+    min-width: 0;
+  }
+
+  .stock-view-panel .heading-actions > button {
+    justify-self: start;
   }
 
   .metrics,
