@@ -197,6 +197,10 @@ function App() {
   });
   const [reportType, setReportType] = useState('');
   const [generatedReport, setGeneratedReport] = useState(null);
+  const [selectedSales, setSelectedSales] = useState([]);
+  const [pendingSaleDelete, setPendingSaleDelete] = useState(null);
+  const [selectedReceipts, setSelectedReceipts] = useState([]);
+  const [pendingReceiptDelete, setPendingReceiptDelete] = useState(null);
 
   useEffect(() => {
     if (user?.name) {
@@ -813,6 +817,58 @@ function App() {
     }
   }
 
+  async function deleteSale(saleId) {
+    try {
+      const response = await fetch(`${API_BASE}/sales/${saleId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Unable to delete sale.');
+      }
+
+      setSalesHistory((current) => current.filter((sale) => sale.id !== saleId));
+      setSelectedSales((current) => current.filter((id) => id !== saleId));
+      showToast('Sale deleted successfully.', 'success');
+    } catch (error) {
+      showToast(error.message || 'Unable to delete sale.', 'error');
+    } finally {
+      setPendingSaleDelete(null);
+    }
+  }
+
+  async function deleteMultipleSales(saleIds) {
+    try {
+      const deletePromises = saleIds.map((saleId) =>
+        fetch(`${API_BASE}/sales/${saleId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${authToken}`,
+          },
+        })
+      );
+
+      const responses = await Promise.all(deletePromises);
+      const allSuccessful = responses.every((response) => response.ok);
+
+      if (!allSuccessful) {
+        throw new Error('Some sales could not be deleted.');
+      }
+
+      setSalesHistory((current) => current.filter((sale) => !saleIds.includes(sale.id)));
+      setSelectedSales([]);
+      showToast(`${saleIds.length} sale(s) deleted successfully.`, 'success');
+    } catch (error) {
+      showToast(error.message || 'Unable to delete sales.', 'error');
+    }
+  }
+
   function handleDeleteClick(productId) {
     const product = products.find((item) => item.id === productId);
     if (product) {
@@ -828,6 +884,72 @@ function App() {
 
   function cancelDelete() {
     setPendingDelete(null);
+  }
+
+  function handleSaleDeleteClick(saleId) {
+    const sale = salesHistory.find((sale) => sale.id === saleId);
+    if (sale) {
+      setPendingSaleDelete(sale);
+    }
+  }
+
+  function confirmSaleDelete() {
+    if (pendingSaleDelete) {
+      deleteSale(pendingSaleDelete.id);
+    }
+  }
+
+  function cancelSaleDelete() {
+    setPendingSaleDelete(null);
+  }
+
+  function toggleSaleSelection(saleId) {
+    setSelectedSales((current) =>
+      current.includes(saleId)
+        ? current.filter((id) => id !== saleId)
+        : [...current, saleId]
+    );
+  }
+
+  function handleBulkDeleteSales() {
+    if (selectedSales.length === 0) {
+      showToast('Please select sales to delete.', 'error');
+      return;
+    }
+    deleteMultipleSales(selectedSales);
+  }
+
+  function handleReceiptDeleteClick(saleId) {
+    const sale = salesHistory.find((sale) => sale.id === saleId);
+    if (sale) {
+      setPendingReceiptDelete(sale);
+    }
+  }
+
+  function confirmReceiptDelete() {
+    if (pendingReceiptDelete) {
+      deleteSale(pendingReceiptDelete.id);
+    }
+  }
+
+  function cancelReceiptDelete() {
+    setPendingReceiptDelete(null);
+  }
+
+  function toggleReceiptSelection(saleId) {
+    setSelectedReceipts((current) =>
+      current.includes(saleId)
+        ? current.filter((id) => id !== saleId)
+        : [...current, saleId]
+    );
+  }
+
+  function handleBulkDeleteReceipts() {
+    if (selectedReceipts.length === 0) {
+      showToast('Please select receipts to delete.', 'error');
+      return;
+    }
+    deleteMultipleSales(selectedReceipts);
   }
 
   async function handleRequestReset(event) {
@@ -1472,7 +1594,9 @@ function App() {
             <Icon name={drawerOpen ? 'close' : 'menu'} />
           </button>
           <div className="brand" onClick={() => goToPage('dashboard')} title="Go to dashboard" style={{ cursor: 'pointer' }}>
-            <span className="brand-icon"><Icon name="cart" /></span>
+            <span className="brand-icon">
+              <img src="/favico.ico/fav.png" alt="Store Logo" className="brand-logo-img" />
+            </span>
             <div>
               <strong>{storeName}</strong>
               <small>Supermarket System</small>
@@ -1847,13 +1971,35 @@ function App() {
                   <h2>{storeName} receipt history</h2>
                 </div>
               </div>
+              <div className="heading-actions">
+                {selectedReceipts.length > 0 && (
+                  <button onClick={handleBulkDeleteReceipts} className="bulk-delete-btn">
+                    <Icon name="trash" size={16} /> Delete Selected ({selectedReceipts.length})
+                  </button>
+                )}
+              </div>
             </div>
             {salesHistory.length > 0 ? (
               <div className="receipts-list">
                 {salesHistory.map((sale) => {
                   const saleDate = new Date(sale.timestamp);
                   return (
-                    <div key={sale.ticket} className="receipt">
+                    <div key={sale.ticket} className={`receipt ${selectedReceipts.includes(sale.id) ? 'selected' : ''}`}>
+                      <div className="receipt-actions">
+                        <input
+                          type="checkbox"
+                          checked={selectedReceipts.includes(sale.id)}
+                          onChange={() => toggleReceiptSelection(sale.id)}
+                          className="receipt-checkbox"
+                        />
+                        <button
+                          onClick={() => handleReceiptDeleteClick(sale.id)}
+                          className="delete-receipt-button"
+                          title="Delete receipt"
+                        >
+                          <Icon name="trash" size={16} />
+                        </button>
+                      </div>
                       <div className="receipt-head">
                         <strong>{storeName}</strong>
                         <small>Welcome, thank you for shopping with us.</small>
@@ -2020,16 +2166,23 @@ function App() {
                 <p>Sales overview</p>
                 <h2>Sales history</h2>
               </div>
-              <div className="history-range">
-                {['all', 'day', 'week', 'month'].map((range) => (
-                  <button
-                    key={range}
-                    className={historyRange === range ? 'active' : ''}
-                    onClick={() => setHistoryRange(range)}
-                  >
-                    {range === 'all' ? 'All time' : range}
+              <div className="heading-actions">
+                <div className="history-range">
+                  {['all', 'day', 'week', 'month'].map((range) => (
+                    <button
+                      key={range}
+                      className={historyRange === range ? 'active' : ''}
+                      onClick={() => setHistoryRange(range)}
+                    >
+                      {range === 'all' ? 'All time' : range}
+                    </button>
+                  ))}
+                </div>
+                {selectedSales.length > 0 && (
+                  <button onClick={handleBulkDeleteSales} className="bulk-delete-btn">
+                    <Icon name="trash" size={16} /> Delete Selected ({selectedSales.length})
                   </button>
-                ))}
+                )}
               </div>
             </div>
             <div className="summary-grid">
@@ -2052,7 +2205,13 @@ function App() {
                 const rangeMs = historyRange === 'all' ? Infinity : historyRange === 'day' ? 24 * 60 * 60 * 1000 : historyRange === 'week' ? 7 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
                 return now - sale.timestamp <= rangeMs;
               }).slice(0, 8).map((sale) => (
-                <div className="history-row" key={sale.ticket}>
+                <div className={`history-row ${selectedSales.includes(sale.id) ? 'selected' : ''}`} key={sale.ticket}>
+                  <input
+                    type="checkbox"
+                    checked={selectedSales.includes(sale.id)}
+                    onChange={() => toggleSaleSelection(sale.id)}
+                    className="sale-checkbox"
+                  />
                   <div>
                     <strong>{sale.ticket}</strong>
                     <small>{sale.dateLabel}</small>
@@ -2062,6 +2221,13 @@ function App() {
                     <small>{sale.server}</small>
                   </div>
                   <span>{formatMoney(sale.total)}</span>
+                  <button
+                    onClick={() => handleSaleDeleteClick(sale.id)}
+                    className="delete-sale-button"
+                    title="Delete sale"
+                  >
+                    <Icon name="trash" size={16} />
+                  </button>
                 </div>
               ))}
               {salesHistory.filter((sale) => {
@@ -2148,6 +2314,36 @@ function App() {
             <div className="confirm-actions">
               <button type="button" className="confirm-cancel" onClick={cancelDelete}>Cancel</button>
               <button type="button" className="confirm-delete" onClick={confirmDelete}>Delete product</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {pendingSaleDelete && (
+        <div className="confirm-overlay" role="dialog" aria-modal="true" aria-label="Confirm sale deletion">
+          <div className="confirm-dialog">
+            <div className="confirm-icon"><Icon name="trash" size={24} /></div>
+            <h3>Delete sale record?</h3>
+            <p>Are you sure you want to delete sale <strong>{pendingSaleDelete.ticket}</strong>?</p>
+            <p className="confirm-warning">This action cannot be undone.</p>
+            <div className="confirm-actions">
+              <button type="button" className="confirm-cancel" onClick={cancelSaleDelete}>Cancel</button>
+              <button type="button" className="confirm-delete" onClick={confirmSaleDelete}>Delete sale</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {pendingReceiptDelete && (
+        <div className="confirm-overlay" role="dialog" aria-modal="true" aria-label="Confirm receipt deletion">
+          <div className="confirm-dialog">
+            <div className="confirm-icon"><Icon name="trash" size={24} /></div>
+            <h3>Delete receipt?</h3>
+            <p>Are you sure you want to delete receipt <strong>{pendingReceiptDelete.ticket}</strong>?</p>
+            <p className="confirm-warning">This action cannot be undone.</p>
+            <div className="confirm-actions">
+              <button type="button" className="confirm-cancel" onClick={cancelReceiptDelete}>Cancel</button>
+              <button type="button" className="confirm-delete" onClick={confirmReceiptDelete}>Delete receipt</button>
             </div>
           </div>
         </div>
