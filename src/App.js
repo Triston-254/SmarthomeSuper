@@ -2170,9 +2170,11 @@ function App() {
                 <p>Reports</p>
                 <h2>Generate and download reports</h2>
               </div>
-              <button type="button" onClick={clearReport} className="cancel-edit">
-                <Icon name="close" /> Clear Report
-              </button>
+              {generatedReport && (
+                <button type="button" onClick={clearReport} className="cancel-edit">
+                  <Icon name="close" /> Clear Report
+                </button>
+              )}
             </div>
             
             <div className="report-generator">

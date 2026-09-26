@@ -2956,6 +2956,10 @@ select:focus {
     padding: 12px;
   }
 
+  .reports-panel {
+    margin-top: -4px;
+  }
+
   .topbar {
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     padding: 10px 12px;
