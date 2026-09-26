@@ -295,6 +295,10 @@ function App() {
   }, [receipt]);
 
   useEffect(() => {
+    setShowMessage(true);
+  }, [message]);
+
+  useEffect(() => {
     try {
       window.localStorage.setItem('smarthome-active-page', activePage);
     } catch (error) {

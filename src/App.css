@@ -383,7 +383,7 @@ button {
   min-width: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 12px;
   text-align: center;
   min-height: 44px;
@@ -2307,48 +2307,68 @@ select:focus {
 
 @media (max-width: 768px) {
   .status-strip {
-    flex-direction: column;
-    align-items: stretch;
-    height: auto;
-    min-height: auto;
-    max-height: none;
-    padding: 10px 12px;
+    flex-direction: row;
+    align-items: center;
+    height: 64px;
+    min-height: 64px;
+    max-height: 64px;
+    padding: 8px 10px;
     gap: 8px;
   }
 
   .status-left {
-    flex: 0 0 auto;
+    flex: 0 1 auto;
     min-width: 0;
-    width: 100%;
+    width: auto;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
+    flex-wrap: nowrap;
   }
 
   .status-message-box {
-    width: 100%;
-    max-width: 100%;
-    flex: 0 0 auto;
-    order: 2;
+    width: auto;
+    max-width: none;
+    min-width: 0;
+    min-height: 38px;
+    height: 38px;
+    flex: 1 1 auto;
+    order: 0;
     margin-top: 0;
+    padding: 6px 8px;
+    gap: 6px;
   }
 
   .status-message-box strong {
-    white-space: normal;
-    overflow-wrap: anywhere;
-    word-break: break-word;
-  }
-
-  .status-welcome {
-    font-size: 0.9rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    flex: 1 1 auto;
+  }
+
+  .status-welcome {
+    display: none;
   }
 
   .stock-key {
-    display: none;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 7px;
+    font-size: 0.68rem;
+  }
+
+  .stock-key span {
+    gap: 4px;
+    white-space: nowrap;
+  }
+
+  .status-close {
+    width: 24px;
+    min-width: 24px;
+    height: 24px;
+    padding: 4px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 24px;
   }
 }
 
@@ -2845,7 +2865,7 @@ select:focus {
   }
 
   .top-left {
-    justify-content: center;
+    justify-content: flex-start;
     text-align: center;
   }
 
@@ -2961,15 +2981,9 @@ select:focus {
     text-align: left;
   }
 
-  .status-strip,
   .checkout-row {
     flex-direction: row;
     align-items: center;
-  }
-
-  .status-message-box {
-    width: auto;
-    max-width: 100%;
   }
 
   .auth-shell {
@@ -3005,8 +3019,8 @@ select:focus {
   }
 
   .stock-key {
-    flex-wrap: wrap;
-    gap: 8px;
+    flex-wrap: nowrap;
+    gap: 5px;
   }
 
   .workspace {
