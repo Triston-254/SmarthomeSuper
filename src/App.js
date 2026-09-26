@@ -44,6 +44,7 @@ const iconPaths = {
   receipt: ['M6 3h12v18l-2-1.2-2 1.2-2-1.2-2 1.2-2-1.2L6 21z', 'M9 8h6', 'M9 12h6', 'M9 16h4'],
   store: ['M3 10h18', 'M5 10v10h14V10', 'M3 10l2-6h14l2 6', 'M9 20v-6h6v6', 'M7 10v2', 'M12 10v2', 'M17 10v2'],
   chart: ['M4 19V5', 'M4 19h16', 'M8 16v-5', 'M12 16V8', 'M16 16v-9'],
+  refresh: ['M20 7v5h-5', 'M20 12a8 8 0 1 1-2.34-5.66L20 9'],
   user: ['M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', 'M4 21a8 8 0 0 1 16 0'],
   settings: ['M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z', 'M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2 3.4-.2-.1a1.7 1.7 0 0 0-1.9-.2 7.8 7.8 0 0 1-1.7.7 1.7 1.7 0 0 0-1.2 1.5v.2H11v-.2a1.7 1.7 0 0 0-1.2-1.5 7.8 7.8 0 0 1-1.7-.7 1.7 1.7 0 0 0-1.9.2l-.2.1-2-3.4.1-.1a1.7 1.7 0 0 0 .3-1.9 8.2 8.2 0 0 1-.3-1.9A1.7 1.7 0 0 0 2.8 12h-.2V8h.2a1.7 1.7 0 0 0 1.6-1.1c.1-.7.2-1.3.4-1.9a1.7 1.7 0 0 0-.3-1.9l-.1-.1 2-3.4.2.1a1.7 1.7 0 0 0 1.9.2c.5-.3 1.1-.5 1.7-.7A1.7 1.7 0 0 0 11 .2V0h2v.2a1.7 1.7 0 0 0 1.2 1.5c.6.2 1.2.4 1.7.7a1.7 1.7 0 0 0 1.9-.2l.2-.1 2 3.4-.1.1a1.7 1.7 0 0 0-.3 1.9c.2.6.3 1.2.4 1.9A1.7 1.7 0 0 0 21.2 8h.2v4h-.2a1.7 1.7 0 0 0-1.6 1.1c-.1.7-.2 1.3-.4 1.9z'],
   camera: ['M4 7h3l1.5-2h7L17 7h3v12H4z', 'M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z'],
@@ -144,6 +145,7 @@ function playScanBeep() {
 
 function App() {
   const scannerRef = useRef(null);
+  const pullStartYRef = useRef(null);
   const [authMode, setAuthMode] = useState('login');
   const [authForm, setAuthForm] = useState({ name: '', email: '', password: '' });
   const [authError, setAuthError] = useState('');
@@ -195,6 +197,8 @@ function App() {
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [stockMenuOpen, setStockMenuOpen] = useState(true);
   const [stockCategory, setStockCategory] = useState('All');
   const [theme, setTheme] = useState('light');
@@ -270,6 +274,27 @@ function App() {
     window.clearTimeout(toastTimerRef.current);
     setToast({ text, type });
     toastTimerRef.current = window.setTimeout(() => setToast(null), 2800);
+  }
+
+  function handleWorkspaceTouchStart(event) {
+    if (!isMobileLayout || isRefreshing || event.currentTarget.scrollTop > 0) return;
+    pullStartYRef.current = event.touches[0]?.clientY ?? null;
+  }
+
+  function handleWorkspaceTouchMove(event) {
+    if (pullStartYRef.current === null || isRefreshing) return;
+    const distance = event.touches[0].clientY - pullStartYRef.current;
+    setPullDistance(Math.max(0, Math.min(distance, 88)));
+  }
+
+  function handleWorkspaceTouchEnd() {
+    pullStartYRef.current = null;
+    if (pullDistance >= 72) {
+      setIsRefreshing(true);
+      window.setTimeout(() => window.location.reload(), 180);
+      return;
+    }
+    setPullDistance(0);
   }
 
   useEffect(() => {
@@ -1752,7 +1777,27 @@ function App() {
           <Icon name={theme === 'light' ? 'moon' : 'sun'} size={20} />
         </button>
 
-        <section className="workspace">
+        <section
+          className="workspace"
+          onTouchStart={handleWorkspaceTouchStart}
+          onTouchMove={handleWorkspaceTouchMove}
+          onTouchEnd={handleWorkspaceTouchEnd}
+          onTouchCancel={() => {
+            pullStartYRef.current = null;
+            setPullDistance(0);
+          }}
+        >
+          {(pullDistance > 0 || isRefreshing) && (
+            <div
+              className="pull-refresh-indicator"
+              style={{ transform: `translate(-50%, ${Math.min(pullDistance / 2, 30)}px)` }}
+              role="status"
+              aria-live="polite"
+            >
+              <Icon name="refresh" size={16} />
+              {isRefreshing ? 'Refreshing...' : pullDistance >= 72 ? 'Release to refresh' : 'Pull to refresh'}
+            </div>
+          )}
           <section className="status-strip" aria-live="polite" aria-label="Store status">
             <div className="status-left">
               <div className="stock-key">
@@ -2119,7 +2164,7 @@ function App() {
         )}
 
         {activePage === 'reports' && (
-          <section className="panel">
+          <section className="panel reports-panel">
             <div className="panel-heading">
               <div>
                 <p>Reports</p>
