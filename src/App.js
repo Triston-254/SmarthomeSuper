@@ -844,7 +844,7 @@ function App() {
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(data.message || 'Unable to delete sale.');
+        throw new Error(data.message || `Unable to delete sale (HTTP ${response.status}).`);
       }
 
       setSalesHistory((current) => current.filter((sale) => sale.id !== saleId));
