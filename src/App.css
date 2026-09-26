@@ -2324,6 +2324,7 @@ select:focus {
     justify-content: flex-start;
     align-items: center;
     flex-wrap: nowrap;
+    gap: 8px;
   }
 
   .status-message-box {
@@ -2346,7 +2347,13 @@ select:focus {
   }
 
   .status-welcome {
-    display: none;
+    display: block;
+    flex: 0 1 auto;
+    max-width: 120px;
+    overflow: hidden;
+    font-size: 0.72rem;
+    text-overflow: ellipsis;
+    text-align: left;
   }
 
   .stock-key {
@@ -3021,6 +3028,43 @@ select:focus {
   .stock-key {
     flex-wrap: nowrap;
     gap: 5px;
+  }
+
+  .status-strip {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 24px 28px;
+    gap: 2px;
+    padding: 4px 8px;
+  }
+
+  .status-left {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .status-welcome {
+    max-width: 45%;
+    text-align: right;
+  }
+
+  .status-message-box {
+    width: 100%;
+    min-height: 28px;
+    height: 28px;
+    padding: 3px 7px;
+  }
+
+  .status-message-box strong {
+    font-size: 0.7rem;
+  }
+
+  .status-close {
+    width: 20px;
+    min-width: 20px;
+    height: 20px;
+    flex-basis: 20px;
+    padding: 3px;
   }
 
   .workspace {
