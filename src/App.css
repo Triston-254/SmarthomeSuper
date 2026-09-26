@@ -2954,10 +2954,7 @@ select:focus {
 @media (max-width: 640px) {
   .workspace {
     padding: 12px;
-  }
-
-  .reports-panel {
-    margin-top: -4px;
+    gap: 4px;
   }
 
   .topbar {
